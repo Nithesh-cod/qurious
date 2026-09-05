@@ -1,0 +1,14 @@
+{
+  "name": "Qurious",
+  "short_name": "Qurious",
+  "description": "Learn quantum computing by building it. Drag gates, watch the state change, ask a tutor that checks itself.",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#05070f",
+  "theme_color": "#05070f",
+  "icons": [
+    { "src": "./brand/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./brand/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

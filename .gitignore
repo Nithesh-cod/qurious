@@ -1,0 +1,16 @@
+node_modules/
+dist/
+android/
+*.apk
+
+# Secrets. Never commit these — this repository is a public SIH deliverable.
+.env
+.env.*
+!.env.example
+
+server/quantum_learning.db
+server/__pycache__/
+.DS_Store
+
+# Local build cache
+tsconfig.tsbuildinfo

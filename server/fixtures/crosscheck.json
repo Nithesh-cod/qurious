@@ -1,0 +1,898 @@
+{
+  "generated": "2026-09-05T17:06:09.331Z",
+  "cases": [
+    {
+      "name": "hadamard",
+      "qubits": 1,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[1] q;\nbit[1] meas;\n\nh q[0];\n",
+      "ops": [
+        {
+          "name": "h",
+          "qubits": [
+            0
+          ],
+          "params": []
+        }
+      ],
+      "re": [
+        0.7071067811865476,
+        0.7071067811865476
+      ],
+      "im": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "x",
+      "qubits": 1,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[1] q;\nbit[1] meas;\n\nx q[0];\n",
+      "ops": [
+        {
+          "name": "x",
+          "qubits": [
+            0
+          ],
+          "params": []
+        }
+      ],
+      "re": [
+        0,
+        1
+      ],
+      "im": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "y",
+      "qubits": 1,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[1] q;\nbit[1] meas;\n\ny q[0];\n",
+      "ops": [
+        {
+          "name": "y",
+          "qubits": [
+            0
+          ],
+          "params": []
+        }
+      ],
+      "re": [
+        0,
+        0
+      ],
+      "im": [
+        0,
+        1
+      ]
+    },
+    {
+      "name": "h-then-z",
+      "qubits": 1,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[1] q;\nbit[1] meas;\n\nh q[0];\nz q[0];\n",
+      "ops": [
+        {
+          "name": "h",
+          "qubits": [
+            0
+          ],
+          "params": []
+        },
+        {
+          "name": "z",
+          "qubits": [
+            0
+          ],
+          "params": []
+        }
+      ],
+      "re": [
+        0.7071067811865476,
+        -0.7071067811865476
+      ],
+      "im": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "x-then-s",
+      "qubits": 1,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[1] q;\nbit[1] meas;\n\nx q[0];\ns q[0];\n",
+      "ops": [
+        {
+          "name": "x",
+          "qubits": [
+            0
+          ],
+          "params": []
+        },
+        {
+          "name": "s",
+          "qubits": [
+            0
+          ],
+          "params": []
+        }
+      ],
+      "re": [
+        0,
+        0
+      ],
+      "im": [
+        0,
+        1
+      ]
+    },
+    {
+      "name": "x-then-t",
+      "qubits": 1,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[1] q;\nbit[1] meas;\n\nx q[0];\nt q[0];\n",
+      "ops": [
+        {
+          "name": "x",
+          "qubits": [
+            0
+          ],
+          "params": []
+        },
+        {
+          "name": "t",
+          "qubits": [
+            0
+          ],
+          "params": []
+        }
+      ],
+      "re": [
+        0,
+        0.7071067811865476
+      ],
+      "im": [
+        0,
+        0.7071067811865476
+      ]
+    },
+    {
+      "name": "h-then-sdg",
+      "qubits": 1,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[1] q;\nbit[1] meas;\n\nh q[0];\nsdg q[0];\n",
+      "ops": [
+        {
+          "name": "h",
+          "qubits": [
+            0
+          ],
+          "params": []
+        },
+        {
+          "name": "sdg",
+          "qubits": [
+            0
+          ],
+          "params": []
+        }
+      ],
+      "re": [
+        0.7071067811865476,
+        0
+      ],
+      "im": [
+        0,
+        -0.7071067811865476
+      ]
+    },
+    {
+      "name": "rx-pi-3",
+      "qubits": 1,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[1] q;\nbit[1] meas;\n\nrx(1.0471975511965976) q[0];\n",
+      "ops": [
+        {
+          "name": "rx",
+          "qubits": [
+            0
+          ],
+          "params": [
+            1.0471975511965976
+          ]
+        }
+      ],
+      "re": [
+        0.8660254037844387,
+        0
+      ],
+      "im": [
+        0,
+        -0.49999999999999994
+      ]
+    },
+    {
+      "name": "ry-pi-5",
+      "qubits": 1,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[1] q;\nbit[1] meas;\n\nry(0.6283185307179586) q[0];\n",
+      "ops": [
+        {
+          "name": "ry",
+          "qubits": [
+            0
+          ],
+          "params": [
+            0.6283185307179586
+          ]
+        }
+      ],
+      "re": [
+        0.9510565162951535,
+        0.3090169943749474
+      ],
+      "im": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "h-then-rz",
+      "qubits": 1,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[1] q;\nbit[1] meas;\n\nh q[0];\nrz(0.4487989505128276) q[0];\n",
+      "ops": [
+        {
+          "name": "h",
+          "qubits": [
+            0
+          ],
+          "params": []
+        },
+        {
+          "name": "rz",
+          "qubits": [
+            0
+          ],
+          "params": [
+            0.4487989505128276
+          ]
+        }
+      ],
+      "re": [
+        0.6893781378718105,
+        0.6893781378718105
+      ],
+      "im": [
+        -0.1573460613564738,
+        0.1573460613564738
+      ]
+    },
+    {
+      "name": "h-then-phase",
+      "qubits": 1,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[1] q;\nbit[1] meas;\n\nh q[0];\np(0.25*pi) q[0];\n",
+      "ops": [
+        {
+          "name": "h",
+          "qubits": [
+            0
+          ],
+          "params": []
+        },
+        {
+          "name": "p",
+          "qubits": [
+            0
+          ],
+          "params": [
+            0.7853981633974483
+          ]
+        }
+      ],
+      "re": [
+        0.7071067811865476,
+        0.5000000000000001
+      ],
+      "im": [
+        0,
+        0.5
+      ]
+    },
+    {
+      "name": "bell",
+      "qubits": 2,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[2] q;\nbit[2] meas;\n\nh q[0];\ncx q[0], q[1];\n",
+      "ops": [
+        {
+          "name": "h",
+          "qubits": [
+            0
+          ],
+          "params": []
+        },
+        {
+          "name": "cx",
+          "qubits": [
+            0,
+            1
+          ],
+          "params": []
+        }
+      ],
+      "re": [
+        0.7071067811865476,
+        0,
+        0,
+        0.7071067811865476
+      ],
+      "im": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "bell-phi-minus",
+      "qubits": 2,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[2] q;\nbit[2] meas;\n\nh q[0];\ncx q[0], q[1];\nz q[0];\n",
+      "ops": [
+        {
+          "name": "h",
+          "qubits": [
+            0
+          ],
+          "params": []
+        },
+        {
+          "name": "cx",
+          "qubits": [
+            0,
+            1
+          ],
+          "params": []
+        },
+        {
+          "name": "z",
+          "qubits": [
+            0
+          ],
+          "params": []
+        }
+      ],
+      "re": [
+        0.7071067811865476,
+        0,
+        0,
+        -0.7071067811865476
+      ],
+      "im": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "cz-both-set",
+      "qubits": 2,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[2] q;\nbit[2] meas;\n\nx q[0];\nx q[1];\ncz q[0], q[1];\n",
+      "ops": [
+        {
+          "name": "x",
+          "qubits": [
+            0
+          ],
+          "params": []
+        },
+        {
+          "name": "x",
+          "qubits": [
+            1
+          ],
+          "params": []
+        },
+        {
+          "name": "cz",
+          "qubits": [
+            0,
+            1
+          ],
+          "params": []
+        }
+      ],
+      "re": [
+        0,
+        0,
+        0,
+        -1
+      ],
+      "im": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "controlled-y",
+      "qubits": 2,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[2] q;\nbit[2] meas;\n\nh q[0];\ncy q[0], q[1];\n",
+      "ops": [
+        {
+          "name": "h",
+          "qubits": [
+            0
+          ],
+          "params": []
+        },
+        {
+          "name": "cy",
+          "qubits": [
+            0,
+            1
+          ],
+          "params": []
+        }
+      ],
+      "re": [
+        0.7071067811865476,
+        0,
+        0,
+        0
+      ],
+      "im": [
+        0,
+        0,
+        0,
+        0.7071067811865476
+      ]
+    },
+    {
+      "name": "swap",
+      "qubits": 2,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[2] q;\nbit[2] meas;\n\nx q[0];\nswap q[0], q[1];\n",
+      "ops": [
+        {
+          "name": "x",
+          "qubits": [
+            0
+          ],
+          "params": []
+        },
+        {
+          "name": "swap",
+          "qubits": [
+            0,
+            1
+          ],
+          "params": []
+        }
+      ],
+      "re": [
+        0,
+        0,
+        1,
+        0
+      ],
+      "im": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "ghz3",
+      "qubits": 3,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[3] q;\nbit[3] meas;\n\nh q[0];\ncx q[0], q[1];\ncx q[0], q[2];\n",
+      "ops": [
+        {
+          "name": "h",
+          "qubits": [
+            0
+          ],
+          "params": []
+        },
+        {
+          "name": "cx",
+          "qubits": [
+            0,
+            1
+          ],
+          "params": []
+        },
+        {
+          "name": "cx",
+          "qubits": [
+            0,
+            2
+          ],
+          "params": []
+        }
+      ],
+      "re": [
+        0.7071067811865476,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0.7071067811865476
+      ],
+      "im": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "toffoli",
+      "qubits": 3,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[3] q;\nbit[3] meas;\n\nx q[0];\nx q[1];\nccx q[0], q[1], q[2];\n",
+      "ops": [
+        {
+          "name": "x",
+          "qubits": [
+            0
+          ],
+          "params": []
+        },
+        {
+          "name": "x",
+          "qubits": [
+            1
+          ],
+          "params": []
+        },
+        {
+          "name": "ccx",
+          "qubits": [
+            0,
+            1,
+            2
+          ],
+          "params": []
+        }
+      ],
+      "re": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "im": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "fredkin",
+      "qubits": 3,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[3] q;\nbit[3] meas;\n\nx q[0];\nx q[1];\ncswap q[0], q[1], q[2];\n",
+      "ops": [
+        {
+          "name": "x",
+          "qubits": [
+            0
+          ],
+          "params": []
+        },
+        {
+          "name": "x",
+          "qubits": [
+            1
+          ],
+          "params": []
+        },
+        {
+          "name": "cswap",
+          "qubits": [
+            0,
+            1,
+            2
+          ],
+          "params": []
+        }
+      ],
+      "re": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "im": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "mixed-3q",
+      "qubits": 3,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[3] q;\nbit[3] meas;\n\nh q[0];\nh q[1];\nh q[2];\nrz(0.6) q[1];\ncx q[1], q[2];\nry(1.1) q[0];\n",
+      "ops": [
+        {
+          "name": "h",
+          "qubits": [
+            0
+          ],
+          "params": []
+        },
+        {
+          "name": "h",
+          "qubits": [
+            1
+          ],
+          "params": []
+        },
+        {
+          "name": "h",
+          "qubits": [
+            2
+          ],
+          "params": []
+        },
+        {
+          "name": "rz",
+          "qubits": [
+            1
+          ],
+          "params": [
+            0.6
+          ]
+        },
+        {
+          "name": "cx",
+          "qubits": [
+            1,
+            2
+          ],
+          "params": []
+        },
+        {
+          "name": "ry",
+          "qubits": [
+            0
+          ],
+          "params": [
+            1.1
+          ]
+        }
+      ],
+      "re": [
+        0.11140665384075674,
+        0.46449489700503244,
+        0.11140665384075674,
+        0.46449489700503244,
+        0.11140665384075674,
+        0.46449489700503244,
+        0.11140665384075674,
+        0.46449489700503244
+      ],
+      "im": [
+        -0.03446211648065721,
+        -0.1436851094023449,
+        0.03446211648065721,
+        0.1436851094023449,
+        -0.03446211648065721,
+        -0.1436851094023449,
+        0.03446211648065721,
+        0.1436851094023449
+      ]
+    },
+    {
+      "name": "grover-2q",
+      "qubits": 2,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[2] q;\nbit[2] meas;\n\nh q[0];\nh q[1];\ncz q[0], q[1];\nh q[0];\nh q[1];\nx q[0];\nx q[1];\ncz q[0], q[1];\nx q[0];\nx q[1];\nh q[0];\nh q[1];\n",
+      "ops": [
+        {
+          "name": "h",
+          "qubits": [
+            0
+          ],
+          "params": []
+        },
+        {
+          "name": "h",
+          "qubits": [
+            1
+          ],
+          "params": []
+        },
+        {
+          "name": "cz",
+          "qubits": [
+            0,
+            1
+          ],
+          "params": []
+        },
+        {
+          "name": "h",
+          "qubits": [
+            0
+          ],
+          "params": []
+        },
+        {
+          "name": "h",
+          "qubits": [
+            1
+          ],
+          "params": []
+        },
+        {
+          "name": "x",
+          "qubits": [
+            0
+          ],
+          "params": []
+        },
+        {
+          "name": "x",
+          "qubits": [
+            1
+          ],
+          "params": []
+        },
+        {
+          "name": "cz",
+          "qubits": [
+            0,
+            1
+          ],
+          "params": []
+        },
+        {
+          "name": "x",
+          "qubits": [
+            0
+          ],
+          "params": []
+        },
+        {
+          "name": "x",
+          "qubits": [
+            1
+          ],
+          "params": []
+        },
+        {
+          "name": "h",
+          "qubits": [
+            0
+          ],
+          "params": []
+        },
+        {
+          "name": "h",
+          "qubits": [
+            1
+          ],
+          "params": []
+        }
+      ],
+      "re": [
+        0,
+        0,
+        0,
+        -1.0000000000000002
+      ],
+      "im": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "chain-4q",
+      "qubits": 4,
+      "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\n\nqubit[4] q;\nbit[4] meas;\n\nh q[0];\ncx q[0], q[1];\ncx q[1], q[2];\ncx q[2], q[3];\nt q[3];\nh q[2];\n",
+      "ops": [
+        {
+          "name": "h",
+          "qubits": [
+            0
+          ],
+          "params": []
+        },
+        {
+          "name": "cx",
+          "qubits": [
+            0,
+            1
+          ],
+          "params": []
+        },
+        {
+          "name": "cx",
+          "qubits": [
+            1,
+            2
+          ],
+          "params": []
+        },
+        {
+          "name": "cx",
+          "qubits": [
+            2,
+            3
+          ],
+          "params": []
+        },
+        {
+          "name": "t",
+          "qubits": [
+            3
+          ],
+          "params": []
+        },
+        {
+          "name": "h",
+          "qubits": [
+            2
+          ],
+          "params": []
+        }
+      ],
+      "re": [
+        0.5000000000000001,
+        0,
+        0,
+        0,
+        0.5000000000000001,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0.35355339059327384,
+        0,
+        0,
+        0,
+        -0.35355339059327384
+      ],
+      "im": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0.35355339059327384,
+        0,
+        0,
+        0,
+        -0.35355339059327384
+      ]
+    }
+  ]
+}

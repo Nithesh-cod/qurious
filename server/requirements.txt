@@ -1,0 +1,11 @@
+# Server + cross-check dependencies.
+# The learning app itself needs none of this — the simulator runs on the device.
+fastapi>=0.115
+uvicorn[standard]>=0.32
+pydantic>=2.9
+qiskit>=1.2
+qiskit-aer>=0.15
+numpy>=1.26
+# optional extra backends
+# pennylane>=0.38
+# cirq>=1.4

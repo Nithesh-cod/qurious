@@ -1,0 +1,368 @@
+/* ============================================================================
+   Android-native shell + light theme correction
+   ----------------------------------------------------------------------------
+   On a phone this stops being a web page. Navigation moves to a bottom tab bar
+   where a thumb can reach it, side panels become bottom sheets, and every touch
+   target is at least 48dp. The desktop layout is untouched.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- light theme */
+/* The original light palette put translucent white glass over a pale ground,
+   which reads as washed-out rather than transparent. Light glass needs a
+   *tinted* ground behind it and darker ink on top. */
+
+:root[data-theme='light'] {
+  --void-0: #e8edf7;
+  --void-1: #dfe7f4;
+  --void-2: #d3ddf0;
+
+  --ink: #0a1020;
+  --ink-2: #2b3752;
+  --ink-3: #55627e;
+  --ink-4: #7c8aa6;
+
+  --cyan: #0770a0;
+  --violet: #6633cc;
+  --mint: #0a8a68;
+  --amber: #9a6207;
+  --rose: #c22f52;
+
+  --glass-bg: rgba(255, 255, 255, 0.66);
+  --glass-bg-strong: rgba(255, 255, 255, 0.86);
+  --glass-bg-soft: rgba(255, 255, 255, 0.46);
+  --glass-border: rgba(28, 48, 88, 0.16);
+  --glass-border-soft: rgba(28, 48, 88, 0.1);
+  --glass-highlight: rgba(255, 255, 255, 1);
+  --glass-sat: 130%;
+
+  --shadow-1: 0 1px 2px rgba(18, 32, 64, .1);
+  --shadow-2: 0 8px 22px -10px rgba(18, 32, 64, .24);
+  --shadow-3: 0 24px 52px -20px rgba(18, 32, 64, .3);
+  --glow-accent: 0 0 22px -10px rgba(7, 112, 160, .55);
+}
+
+/* A cooler, calmer ground so the white glass has something to sit on. */
+:root[data-theme='light'] .field {
+  background:
+    radial-gradient(120% 90% at 12% 8%, rgba(140, 120, 235, .16) 0%, transparent 52%),
+    radial-gradient(100% 80% at 88% 14%, rgba(80, 175, 220, .18) 0%, transparent 50%),
+    radial-gradient(120% 100% at 50% 108%, rgba(90, 200, 175, .14) 0%, transparent 55%),
+    linear-gradient(170deg, var(--void-1), var(--void-0) 55%, var(--void-2));
+}
+:root[data-theme='light'] .blob { opacity: .2; filter: blur(110px); }
+:root[data-theme='light'] .field::after { opacity: .07; mix-blend-mode: multiply; }
+
+/* Selected tab needs a solid fill in light mode — a translucent tint disappears. */
+:root[data-theme='light'] .tab[aria-selected='true'] {
+  background: linear-gradient(135deg, var(--cyan), var(--violet));
+  color: #fff;
+  box-shadow: var(--shadow-2);
+}
+:root[data-theme='light'] .btn-primary { color: #fff; }
+:root[data-theme='light'] .seg button[aria-pressed='true'] {
+  background: #fff; color: var(--ink);
+  box-shadow: 0 1px 3px rgba(18, 32, 64, .16);
+}
+:root[data-theme='light'] .gate-chip { background: color-mix(in srgb, var(--tint) 12%, #fff); }
+:root[data-theme='light'] .canvas-scroll { background: rgba(255, 255, 255, .5); }
+:root[data-theme='light'] .amp-track,
+:root[data-theme='light'] .mastery-track,
+:root[data-theme='light'] .fidelity-bar { background: rgba(18, 32, 64, .08); }
+:root[data-theme='light'] .drag-ghost { background: color-mix(in srgb, var(--tint) 18%, #fff); color: var(--ink); }
+:root[data-theme='light'] .cohort th { background: rgba(240, 245, 253, .94); }
+:root[data-theme='light'] .heat { color: #0a1020; }
+:root[data-theme='light'] .hist-bar { box-shadow: 0 0 12px -8px var(--accent), inset 0 1px 0 rgba(255,255,255,.6); }
+/* The code editor keeps its dark theme deliberately — that is what every editor does. */
+:root[data-theme='light'] .code-host { background: #10151f; border-color: rgba(18, 32, 64, .18); }
+
+/* ---------------------------------------------------------------- phone shell */
+
+@media (max-width: 760px) {
+  :root {
+    --glass-blur: 16px;
+    --gutter: 10px;
+    --r-lg: 22px;
+    --r-xl: 26px;
+  }
+
+  body { overscroll-behavior-y: none; }
+
+  /* Grid becomes: header / content / bottom nav. Content is the only scroller. */
+  .app {
+    padding: 0;
+    gap: 0;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* Compact app bar — brand only, no tabs. */
+  .topbar {
+    border-radius: 0;
+    border-left: 0; border-right: 0; border-top: 0;
+    padding: 10px 14px;
+    flex-wrap: nowrap;
+    gap: 10px;
+  }
+  .topbar::before { border-radius: 0; }
+  .brand-mark { width: 28px; height: 28px; }
+  .brand-name { font-size: 15px; }
+  .brand-sub { display: none; }
+
+  /* The desktop tab row is replaced by the bottom bar. */
+  .nav { display: none; }
+
+  .stage { padding: 10px; gap: 10px; }
+  .stage-build, .stage-single { grid-template-columns: minmax(0, 1fr); }
+
+  /* On a phone the build view is one scrolling column, not a fixed grid. */
+  .col-build { grid-template-rows: none; grid-auto-rows: min-content; }
+  .stage-build { grid-template-rows: none; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .stage-build > .col { display: contents; }
+
+  /* Side panels become sheets, opened from the toolbar. */
+  .side-tutor, .side-code { display: none; }
+
+  .reading { padding: 4px 2px 20px; gap: 12px; }
+  .reading h1 { font-size: 23px; }
+
+  /* Touch targets: Android's minimum is 48dp. */
+  .btn { padding: 11px 16px; font-size: 13.5px; min-height: 44px; }
+  .btn-sm { padding: 9px 13px; min-height: 38px; }
+  .btn-icon { min-width: 44px; }
+  .seg button { padding: 10px 14px; min-height: 40px; }
+  .gate-chip { padding: 11px 13px; min-width: 46px; font-size: 13px; }
+  .quiz-option { padding: 15px 16px; min-height: 52px; }
+  .chip { padding: 6px 11px; }
+
+  /* Circuit canvas gets more room and scrolls horizontally on its own. */
+  .canvas-scroll { -webkit-overflow-scrolling: touch; }
+  .palette { gap: 12px; }
+  .palette-hint { display: none; }
+
+  .bloch-strip { gap: 8px; }
+  .amp-row { grid-template-columns: 54px 1fr 44px 10px; gap: 7px; }
+  .hist-bars { height: 120px; }
+  .card-grid { grid-template-columns: minmax(0, 1fr); }
+  .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .two-col { grid-template-columns: minmax(0, 1fr); }
+  .lesson-embed { grid-template-columns: minmax(0, 1fr); }
+  .lesson-step-num { display: none; }
+  .table-scroll { max-height: none; }
+}
+
+/* ---------------------------------------------------------------- bottom nav */
+
+.bottom-nav { display: none; }
+
+@media (max-width: 760px) {
+  .bottom-nav {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    align-items: stretch;
+    gap: 2px;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    border-radius: 0;
+    border-left: 0; border-right: 0; border-bottom: 0;
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(22px) saturate(170%);
+    -webkit-backdrop-filter: blur(22px) saturate(170%);
+    border-top: 1px solid var(--glass-border-soft);
+    z-index: 40;
+  }
+  .bottom-nav::before { display: none; }
+
+  .bnav-item {
+    appearance: none; border: 0; background: transparent; cursor: pointer;
+    display: grid; justify-items: center; align-content: center; gap: 3px;
+    padding: 7px 2px 6px; border-radius: 16px; min-height: 52px;
+    color: var(--ink-3); font: inherit; font-size: 10px; font-weight: 500;
+    transition: color var(--t-fast) var(--ease-liquid), background var(--t-fast);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .bnav-item svg { width: 21px; height: 21px; }
+  .bnav-item[aria-selected='true'] { color: var(--accent); }
+  .bnav-pill {
+    display: block; width: 26px; height: 3px; border-radius: 99px;
+    background: transparent; transition: background var(--t-fast) var(--ease-liquid);
+  }
+  .bnav-item[aria-selected='true'] .bnav-pill { background: var(--accent); }
+  .bnav-item:active { background: var(--glass-bg); }
+}
+
+/* ---------------------------------------------------------------- sheets */
+
+.sheet-backdrop {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(4, 8, 16, .55);
+  backdrop-filter: blur(3px);
+}
+@keyframes fade-in { from { opacity: 0 } to { opacity: 1 } }
+@keyframes sheet-up { from { transform: translateY(100%) } to { transform: none } }
+
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 61;
+  max-height: 86vh;
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  border-bottom: 0; border-left: 0; border-right: 0;
+  padding: 8px 14px calc(14px + env(safe-area-inset-bottom));
+  display: grid; grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 8px;
+}
+
+/*
+ * Motion is a transition, not a keyframe animation with `fill-mode: both`.
+ *
+ * That distinction matters: an animation whose timeline never advances leaves the
+ * element parked at its `from` keyframe — which put the whole sheet a screen-height
+ * below the fold and made the tutor look like it refused to open. A transition that
+ * does not run just lands on the final style, so the sheet is always reachable.
+ */
+.sheet-backdrop { opacity: 1; transition: opacity .2s var(--ease-liquid); }
+.sheet { transform: none; transition: transform .32s var(--ease-liquid); }
+
+/*
+ * The starting offset is deliberately small.
+ *
+ * A full `translateY(100%)` slide looks better but fails catastrophically: if the
+ * animation timeline is ever frozen — a throttled tab, a low-power WebView, a paused
+ * compositor — the sheet stays parked a whole screen-height below the fold, open and
+ * focusable but completely invisible. That is exactly the "it does not open" bug.
+ *
+ * Eighteen pixels still reads as a rise when the transition runs, and costs nothing at
+ * all when it does not. Motion should fail safe.
+ */
+.sheet:not(.is-open) { transform: translateY(18px); }
+.sheet-backdrop:not(.is-open) { opacity: .55; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-backdrop, .sheet { transition: none; }
+  .sheet:not(.is-open) { transform: none; }
+  .sheet-backdrop:not(.is-open) { opacity: 1; }
+}
+.sheet-grip {
+  width: 40px; height: 4px; border-radius: 99px;
+  background: var(--glass-border); margin: 2px auto 4px; flex: none;
+}
+.sheet-head { display: flex; align-items: center; gap: 10px; }
+.sheet-head h3 { font-size: 15px; }
+.sheet-body { overflow: auto; min-height: 0; }
+
+/* The toolbar that opens the sheets — phone only. */
+.sheet-bar { display: none; }
+@media (max-width: 760px) {
+  .sheet-bar { display: flex; gap: 8px; }
+  .sheet-bar .btn { flex: 1; justify-content: center; }
+}
+
+/* ---------------------------------------------------------------- avatar */
+
+.avatar3d {
+  position: fixed; z-index: 55;
+  cursor: grab; touch-action: none;
+  /* Hit-test as a disc, not as the square canvas. The corners are empty pixels, and
+     letting them swallow taps meant the avatar blocked buttons it was only floating
+     over. 52% still contains the widest ring, so nothing visible is clipped. */
+  clip-path: circle(52%);
+  opacity: .94;
+  filter: drop-shadow(0 12px 26px rgba(0, 0, 0, .45));
+  transition: filter var(--t-mid) var(--ease-liquid);
+  -webkit-tap-highlight-color: transparent;
+}
+.avatar3d:active { cursor: grabbing; }
+/* Only while it is moving itself. A transition during a drag would make the avatar
+   lag behind the finger, which reads as broken dragging. */
+.avatar-gliding {
+  transition: left 2.4s var(--ease-liquid), top 2.4s var(--ease-liquid),
+              filter var(--t-mid) var(--ease-liquid);
+}
+@media (prefers-reduced-motion: reduce) { .avatar-gliding { transition: none; } }
+.avatar3d canvas { display: block; pointer-events: none; }
+.avatar3d::after {
+  content: ''; position: absolute; inset: 12%;
+  border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 26%, transparent), transparent 66%);
+  opacity: .5; filter: blur(16px); z-index: -1;
+  transition: opacity var(--t-mid) var(--ease-liquid), background var(--t-mid);
+}
+.avatar-talk::after     { opacity: .85; }
+.avatar-listen::after   { background: radial-gradient(circle, color-mix(in srgb, var(--mint) 34%, transparent), transparent 66%); opacity: .9; }
+.avatar-think::after    { background: radial-gradient(circle, color-mix(in srgb, var(--violet) 30%, transparent), transparent 66%); }
+.avatar-celebrate::after{ background: radial-gradient(circle, color-mix(in srgb, var(--amber) 36%, transparent), transparent 66%); opacity: .95; }
+.avatar3d:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; border-radius: 50%; }
+
+.avatar-bubble {
+  position: fixed; z-index: 56;
+  max-width: 250px; padding: 11px 14px;
+  border-radius: 18px 18px 18px 6px;
+  font-size: 13px; line-height: 1.5; color: var(--ink);
+  cursor: pointer;
+}
+
+/* ---------------------------------------------------------------- tutor sheet */
+
+.tutor-sheet, .settings-sheet { max-width: 640px; margin: 0 auto; }
+@media (min-width: 761px) {
+  .tutor-sheet, .settings-sheet {
+    left: auto; right: 20px; bottom: 20px;
+    width: min(460px, calc(100vw - 40px));
+    border-radius: var(--r-xl);
+    border: 1px solid var(--glass-border-soft);
+    max-height: min(74vh, 700px);
+  }
+}
+
+.tutor-suggestions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; }
+.tutor-suggestions .chip { cursor: pointer; text-align: left; }
+.tutor-suggestions .chip:hover { background: var(--glass-bg-strong); color: var(--ink); }
+
+.tutor-answer { display: grid; gap: 8px; }
+.tutor-answer-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tutor-answer h4 { font-size: 14.5px; }
+.tutor-answer p { font-size: 14px; line-height: 1.65; }
+
+.tutor-settings-row {
+  display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+  margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--glass-border-soft);
+}
+.tutor-settings-row label { display: inline-flex; align-items: center; gap: 7px; }
+.tutor-settings-row select {
+  font: inherit; font-size: 12px; color: var(--ink);
+  background: var(--glass-bg-soft); border: 1px solid var(--glass-border-soft);
+  border-radius: var(--r-sm); padding: 6px 9px;
+}
+.wake-toggle input { width: 16px; height: 16px; accent-color: var(--accent); }
+
+/* ---------------------------------------------------------------- settings */
+
+.settings-body { display: grid; gap: 14px; align-content: start; }
+.setting-toggle { display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; cursor: pointer; }
+.setting-toggle input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--accent); flex: none; }
+.setting-group { display: grid; gap: 6px; }
+.setting-label { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+
+.provider-grid { display: grid; gap: 8px; }
+.provider-card {
+  appearance: none; cursor: pointer; font: inherit; text-align: left; color: inherit;
+  padding: 12px 14px; border-radius: var(--r-md); display: grid; gap: 5px;
+  border: 1px solid var(--glass-border-soft);
+}
+.provider-card.picked { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.provider-card strong { font-size: 13.5px; }
+
+.setting-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.ok-text { color: var(--mint); }
+.err-text { color: var(--rose); }
+
+/* Avatar must not sit under the bottom nav on a phone. */
+@media (max-width: 760px) {
+  .avatar-bubble { max-width: min(250px, calc(100vw - 32px)); }
+}
+
+/* The sheet header carries a title, a status chip and two buttons — far too much for
+   one row on a phone, which squeezed "Ask the tutor" into three lines. */
+@media (max-width: 760px) {
+  .sheet-head { flex-wrap: wrap; row-gap: 6px; }
+  .sheet-head h3 { flex: 1 1 100%; }
+  .sheet-head .panel-tools { margin-left: auto; width: auto; }
+}

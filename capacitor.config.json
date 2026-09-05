@@ -1,0 +1,7 @@
+{
+  "appId": "in.sih.qurious",
+  "appName": "Qurious",
+  "webDir": "dist",
+  "android": { "allowMixedContent": true },
+  "server": { "androidScheme": "https" }
+}
