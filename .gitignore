@@ -7,6 +7,8 @@ android/
 .env
 .env.*
 !.env.example
+# Holds no secret — it exists precisely to blank the key out of shipped builds.
+!.env.production
 
 server/quantum_learning.db
 server/__pycache__/
