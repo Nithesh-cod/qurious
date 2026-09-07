@@ -1,28 +1,28 @@
 /**
- * 3D Bloch sphere.
+ * The Bloch sphere.
  *
- * A single qubit's state as a point on a sphere, rendered with Three.js. The arrow
- * animates to each new state rather than snapping, so a learner sees the *rotation*
- * a gate performs, which is the whole intuition the gate names are trying to convey.
+ * A single qubit's state as a point on a sphere. Three things make it teach rather than
+ * decorate:
  *
- * When a qubit becomes entangled its Bloch vector shrinks toward the centre — the
- * sphere renders that honestly, which makes entanglement visible rather than asserted.
+ *   1. The arrow *travels* to each new state instead of snapping, so a gate reads as
+ *      the rotation it actually is. A learner who watches an X gate swing the arrow
+ *      from pole to pole has understood something a matrix will not tell them.
+ *   2. It leaves a fading trail behind it, so the path is visible after the motion
+ *      has finished — the difference between an X and a Y is the route, not the
+ *      destination.
+ *   3. You can drag it. A sphere you cannot turn is a picture of a sphere, and the
+ *      whole point of the third dimension is being able to look round the back.
+ *
+ * When a qubit becomes entangled its vector shrinks toward the centre. That is drawn
+ * honestly — a shrinking arrow and a growing haze — which makes entanglement something
+ * you see rather than something you are told.
+ *
+ * Every sphere on the page shares one WebGL context. See gl/SharedRenderer.ts.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-
-/**
- * Browsers cap how many live WebGL contexts a page may hold — around sixteen, and
- * exceeding it silently kills the oldest, which is how the tutor avatar ended up as a
- * blank white square on a lesson page full of spheres.
- *
- * So spheres take a slot from a shared budget, and any that cannot get one render the
- * 2D fallback instead. The budget deliberately leaves headroom for the avatar, which
- * is created once and must never be the one that gets dropped.
- */
-const WEBGL_BUDGET = 4;
-let liveContexts = 0;
+import { addView, applyOrbit, attachOrbit, glUnavailable, type Orbit } from './gl/SharedRenderer';
 
 export interface BlochProps {
   x: number; y: number; z: number;
@@ -30,231 +30,318 @@ export interface BlochProps {
   label?: string;
   size?: number;
   accent?: string;
+  /** Turn the trail off where it would be noise, such as tiny preview spheres. */
+  trail?: boolean;
 }
 
+const TRAIL_POINTS = 48;
+
 export function BlochSphere(props: BlochProps) {
-  const { x, y, z, purity, label, size = 190, accent = '#6ee7ff' } = props;
-  const mount = useRef<HTMLDivElement>(null);
-  const target = useRef(new THREE.Vector3(x, z, -y)); // three.js Y is up; map quantum z -> screen up
-  const api = useRef<{ dispose: () => void; setAccent: (c: string) => void } | null>(null);
-  const [fallback, setFallback] = useState(false);
+  const { x, y, z, purity, label, size = 190, accent = '#6ee7ff', trail = true } = props;
+  const mount = useRef<HTMLCanvasElement>(null);
+  // three.js has Y up; the quantum z axis is the one that should point up on screen.
+  const target = useRef(new THREE.Vector3(x, z, -y));
+
+  useEffect(() => { target.current.set(x, z, -y); }, [x, y, z]);
 
   useEffect(() => {
     const el = mount.current;
-    if (!el) return;
-
-    if (liveContexts >= WEBGL_BUDGET) { setFallback(true); return; }
-    liveContexts++;
-    let released = false;
-    const release = () => { if (!released) { released = true; liveContexts--; } };
+    if (!el || glUnavailable()) return;
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-    camera.position.set(2.5, 1.75, 2.9);
-    camera.lookAt(0, 0, 0);
-
-    let renderer: THREE.WebGLRenderer;
-    try {
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' });
-    } catch {
-      release();
-      setFallback(true);
-      return;
-    }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    // updateStyle must stay on: with it off the canvas keeps no CSS size and is
-    // displayed at devicePixelRatio times `size`, which overflows its container.
-    renderer.setSize(size, size);
-    el.appendChild(renderer.domElement);
+    const orbit: Orbit = { theta: 0.72, phi: 1.12, radius: 4.1, auto: true };
+    applyOrbit(camera, orbit);
 
     const accentColor = new THREE.Color(accent);
 
-    // --- the glass sphere itself
-    const shell = new THREE.Mesh(
-      new THREE.SphereGeometry(1, 48, 36),
-      new THREE.MeshPhongMaterial({
-        color: 0x9fc8ff, transparent: true, opacity: 0.085,
-        shininess: 70, specular: 0x88bbff, depthWrite: false,
+    // ---------------------------------------------------------------- the ball
+    // A dense wireframe read as a grey mesh ball — heavy, and it fought the arrow for
+    // attention. What makes a sphere look like glass is the edge, not the surface: a
+    // fresnel rim brightens where the surface turns away from the camera, which is the
+    // cue the eye actually uses to read curvature.
+    scene.add(new THREE.Mesh(
+      new THREE.SphereGeometry(0.985, 48, 36),
+      new THREE.MeshBasicMaterial({
+        color: 0x0c1a33, transparent: true, opacity: 0.42, depthWrite: false,
       })
-    );
-    scene.add(shell);
+    ));
 
-    const wire = new THREE.Mesh(
-      new THREE.SphereGeometry(1.001, 24, 16),
-      new THREE.MeshBasicMaterial({ color: 0x7fa8e0, wireframe: true, transparent: true, opacity: 0.11 })
-    );
-    scene.add(wire);
+    const rimMat = new THREE.ShaderMaterial({
+      uniforms: {
+        uColor: { value: new THREE.Color(accent) },
+        uPower: { value: 2.6 },
+      },
+      vertexShader: `
+        varying vec3 vNormalW;
+        varying vec3 vViewDir;
+        void main() {
+          vec4 world = modelMatrix * vec4(position, 1.0);
+          vNormalW = normalize(mat3(modelMatrix) * normal);
+          vViewDir = normalize(cameraPosition - world.xyz);
+          gl_Position = projectionMatrix * viewMatrix * world;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uColor;
+        uniform float uPower;
+        varying vec3 vNormalW;
+        varying vec3 vViewDir;
+        void main() {
+          // Bright at grazing angles, invisible face-on: the glass edge.
+          float f = pow(1.0 - abs(dot(normalize(vNormalW), normalize(vViewDir))), uPower);
+          gl_FragColor = vec4(uColor, f * 0.85);
+        }
+      `,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      side: THREE.BackSide,
+      depthWrite: false,
+    });
+    scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.02, 64, 48), rimMat));
 
-    // --- equator and meridians, so rotation is readable
-    const ring = (rot: [number, number, number], op: number) => {
-      const g = new THREE.RingGeometry(0.998, 1.004, 96);
-      const m = new THREE.MeshBasicMaterial({ color: accentColor, transparent: true, opacity: op, side: THREE.DoubleSide });
-      const mesh = new THREE.Mesh(g, m);
+    // Sparse latitude and longitude lines. Six and four, not a mesh — enough to read
+    // rotation, few enough to stay out of the way.
+    const gridMat = new THREE.LineBasicMaterial({ color: 0x7fa8e0, transparent: true, opacity: 0.16 });
+    for (let i = 0; i < 6; i++) {
+      const pts: THREE.Vector3[] = [];
+      for (let a = 0; a <= 64; a++) {
+        const t = (a / 64) * Math.PI * 2;
+        pts.push(new THREE.Vector3(Math.cos(t), Math.sin(t), 0));
+      }
+      const line = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), gridMat);
+      line.rotation.y = (i / 6) * Math.PI;
+      line.rotation.x = Math.PI / 2;
+      scene.add(line);
+    }
+    for (let i = 1; i <= 3; i++) {
+      const y = Math.cos((i / 4) * Math.PI);
+      const r = Math.sqrt(Math.max(0, 1 - y * y));
+      const pts: THREE.Vector3[] = [];
+      for (let a = 0; a <= 64; a++) {
+        const t = (a / 64) * Math.PI * 2;
+        pts.push(new THREE.Vector3(Math.cos(t) * r, y, Math.sin(t) * r));
+      }
+      scene.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
+    }
+
+    // ---------------------------------------------------------------- guides
+    const ring = (rot: [number, number, number], op: number, col: THREE.ColorRepresentation) => {
+      const mesh = new THREE.Mesh(
+        new THREE.TorusGeometry(1, 0.0042, 8, 160),
+        new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op })
+      );
       mesh.rotation.set(rot[0], rot[1], rot[2]);
       scene.add(mesh);
-      return mesh;
     };
-    ring([Math.PI / 2, 0, 0], 0.26);   // equator (x-y plane)
-    ring([0, 0, 0], 0.1);              // x-z plane
-    ring([0, Math.PI / 2, 0], 0.1);    // y-z plane
+    ring([Math.PI / 2, 0, 0], 0.42, accentColor);  // equator
+    ring([0, 0, 0], 0.14, 0x8fb4e8);
+    ring([0, Math.PI / 2, 0], 0.14, 0x8fb4e8);
 
-    // --- axes
     const axis = (dir: THREE.Vector3, color: number) => {
       const geo = new THREE.BufferGeometry().setFromPoints([
-        dir.clone().multiplyScalar(-1.28), dir.clone().multiplyScalar(1.28),
+        dir.clone().multiplyScalar(-1.22), dir.clone().multiplyScalar(1.22),
       ]);
-      scene.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.3 })));
+      scene.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.26 })));
     };
     axis(new THREE.Vector3(1, 0, 0), 0xff8fa8);
     axis(new THREE.Vector3(0, 1, 0), 0x6ef0c8);
     axis(new THREE.Vector3(0, 0, 1), 0xb388ff);
 
-    // --- poles
-    const pole = (yPos: number, color: number) => {
-      const m = new THREE.Mesh(
-        new THREE.SphereGeometry(0.035, 16, 12),
-        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85 })
-      );
-      m.position.set(0, yPos, 0);
-      scene.add(m);
+    // ---------------------------------------------------------------- labels
+    // Sprites rather than DOM: they stay glued to the axis as the sphere turns.
+    const label3d = (text: string, pos: THREE.Vector3, colour: string) => {
+      const c = document.createElement('canvas');
+      c.width = 128; c.height = 64;
+      const g = c.getContext('2d')!;
+      g.font = '600 40px ui-sans-serif, system-ui, sans-serif';
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillStyle = colour;
+      g.fillText(text, 64, 34);
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: tex, transparent: true, opacity: 0.92, depthTest: false,
+      }));
+      sprite.position.copy(pos);
+      sprite.scale.set(0.42, 0.21, 1);
+      scene.add(sprite);
     };
-    pole(1, 0xffffff);
-    pole(-1, 0x8fa2c8);
+    label3d('|0⟩', new THREE.Vector3(0, 1.34, 0), '#eaf4ff');
+    label3d('|1⟩', new THREE.Vector3(0, -1.34, 0), '#9fb4d8');
+    label3d('|+⟩', new THREE.Vector3(1.34, 0, 0), '#ffb4c4');
+    label3d('|i⟩', new THREE.Vector3(0, 0, -1.34), '#c9a8ff');
 
-    // --- the state vector
-    const vectorGroup = new THREE.Group();
-    scene.add(vectorGroup);
-
+    // ---------------------------------------------------------------- the arrow
+    const arrow = new THREE.Group();
     const shaft = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.017, 0.017, 1, 12),
+      new THREE.CylinderGeometry(0.016, 0.022, 1, 14),
       new THREE.MeshBasicMaterial({ color: accentColor })
     );
     shaft.position.y = 0.5;
     const head = new THREE.Mesh(
-      new THREE.ConeGeometry(0.062, 0.16, 16),
+      new THREE.ConeGeometry(0.066, 0.17, 20),
       new THREE.MeshBasicMaterial({ color: accentColor })
     );
     head.position.y = 1;
-    const glowBall = new THREE.Mesh(
-      new THREE.SphereGeometry(0.1, 20, 16),
-      new THREE.MeshBasicMaterial({ color: accentColor, transparent: true, opacity: 0.22 })
+    const halo = new THREE.Mesh(
+      new THREE.SphereGeometry(0.13, 20, 16),
+      new THREE.MeshBasicMaterial({ color: accentColor, transparent: true, opacity: 0.2, depthWrite: false })
     );
-    glowBall.position.y = 1;
-    const arrow = new THREE.Group();
-    arrow.add(shaft, head, glowBall);
-    vectorGroup.add(arrow);
+    halo.position.y = 1;
+    arrow.add(shaft, head, halo);
+    scene.add(arrow);
 
-    // centre dot — grows as the qubit becomes entangled and the vector shrinks
+    // ---------------------------------------------------------------- the trail
+    let trailLine: THREE.Line | null = null;
+    const history: THREE.Vector3[] = [];
+    if (trail) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(TRAIL_POINTS * 3), 3));
+      trailLine = new THREE.Line(geo, new THREE.LineBasicMaterial({
+        color: accentColor, transparent: true, opacity: 0.5,
+      }));
+      trailLine.frustumCulled = false;
+      scene.add(trailLine);
+    }
+
+    // Grows as the qubit loses a state of its own — the picture of entanglement.
+    const haze = new THREE.Mesh(
+      new THREE.SphereGeometry(0.5, 24, 18),
+      new THREE.MeshBasicMaterial({ color: 0xffc46b, transparent: true, opacity: 0, depthWrite: false })
+    );
+    scene.add(haze);
     const core = new THREE.Mesh(
-      new THREE.SphereGeometry(0.07, 20, 16),
+      new THREE.SphereGeometry(0.075, 20, 16),
       new THREE.MeshBasicMaterial({ color: 0xffc46b, transparent: true, opacity: 0 })
     );
     scene.add(core);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-    const key = new THREE.DirectionalLight(0xffffff, 0.85);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+    const key = new THREE.DirectionalLight(0xffffff, 1.1);
     key.position.set(3, 4, 5);
     scene.add(key);
+    const rim = new THREE.DirectionalLight(accentColor, 0.5);
+    rim.position.set(-4, -1, -3);
+    scene.add(rim);
 
-    // --- animate toward the target direction
+    // ---------------------------------------------------------------- motion
     const current = target.current.clone();
-    let raf = 0;
-    let spin = 0;
     const up = new THREE.Vector3(0, 1, 0);
+    let t = 0;
 
-    const tick = () => {
-      raf = requestAnimationFrame(tick);
-      current.lerp(target.current, 0.12);
+    const detachOrbit = attachOrbit(el, orbit, () => applyOrbit(camera, orbit));
 
-      const len = current.length();
-      if (len > 1e-4) {
-        arrow.visible = true;
-        arrow.scale.set(1, Math.max(len, 0.001), 1);
-        head.position.y = 1;
-        glowBall.position.y = 1;
-        arrow.quaternion.setFromUnitVectors(up, current.clone().normalize());
-      } else {
-        arrow.visible = false;
-      }
-      (core.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 1 - len) * 0.9;
-      core.scale.setScalar(1 + (1 - Math.min(len, 1)) * 0.7);
+    const remove = addView({
+      canvas: el, scene, camera,
+      update: dt => {
+        t += dt;
 
-      spin += 0.0022;
-      scene.rotation.y = Math.sin(spin) * 0.32;
-      renderer.render(scene, camera);
-    };
-    tick();
+        // Ease toward the new state. Frame-rate independent, so a 60Hz and a 120Hz
+        // phone show the same motion.
+        const k = 1 - Math.pow(0.0025, dt);
+        current.lerp(target.current, k);
 
-    api.current = {
-      dispose: () => {
-        release();
-        cancelAnimationFrame(raf);
-        renderer.dispose();
-        scene.traverse(o => {
-          const m = o as THREE.Mesh;
-          if (m.geometry) m.geometry.dispose();
-          if (m.material) (Array.isArray(m.material) ? m.material : [m.material]).forEach(x => x.dispose());
-        });
-        if (renderer.domElement.parentNode === el) el.removeChild(renderer.domElement);
+        const len = current.length();
+        if (len > 1e-4) {
+          arrow.visible = true;
+          arrow.scale.set(1, Math.max(len, 0.001), 1);
+          arrow.quaternion.setFromUnitVectors(up, current.clone().normalize());
+        } else {
+          arrow.visible = false;
+        }
+        halo.scale.setScalar(1 + Math.sin(t * 2.6) * 0.12);
+
+        if (trailLine) {
+          const tip = current.clone();
+          const last = history[history.length - 1];
+          if (!last || last.distanceToSquared(tip) > 2e-5) history.push(tip);
+          while (history.length > TRAIL_POINTS) history.shift();
+          const pos = trailLine.geometry.getAttribute('position') as THREE.BufferAttribute;
+          for (let i = 0; i < TRAIL_POINTS; i++) {
+            const p = history[Math.max(0, history.length - TRAIL_POINTS + i)] ?? tip;
+            pos.setXYZ(i, p.x, p.y, p.z);
+          }
+          pos.needsUpdate = true;
+          (trailLine.material as THREE.LineBasicMaterial).opacity =
+            history.length > 3 ? 0.5 : 0;
+        }
+
+        const mixed = Math.max(0, 1 - len);
+        (core.material as THREE.MeshBasicMaterial).opacity = mixed * 0.9;
+        core.scale.setScalar(1 + mixed * 0.7);
+        (haze.material as THREE.MeshBasicMaterial).opacity = mixed * 0.16;
+        haze.scale.setScalar(0.6 + mixed * 1.5);
+
+        if (orbit.auto) {
+          orbit.theta += dt * 0.12;
+          applyOrbit(camera, orbit);
+        }
       },
-      setAccent: (c: string) => {
-        const col = new THREE.Color(c);
-        [shaft, head, glowBall].forEach(m => (m.material as THREE.MeshBasicMaterial).color = col);
-      },
-    };
+    });
 
-    return () => api.current?.dispose();
-    // Rebuilt only on size change; state updates flow through the ref below.
-  }, [size]);
+    return () => { detachOrbit(); remove(); };
+    // The scene is built once; live values arrive through the target ref.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accent, trail]);
 
-  useEffect(() => { target.current.set(x, z, -y); }, [x, y, z]);
-  useEffect(() => { api.current?.setAccent(accent); }, [accent]);
-
-  // No context available — the flat version carries the same information.
-  if (fallback) return <BlochFlat {...props} size={Math.round(size * 0.86)} />;
-
-  const entangled = purity < 0.999;
+  if (glUnavailable()) return <BlochFlat {...props} />;
 
   return (
-    <div className="bloch">
-      <div ref={mount} className="bloch-canvas" style={{ width: size, height: size }} />
-      <div className="bloch-meta">
-        {label && <span className="bloch-label">{label}</span>}
-        <span className={`chip ${entangled ? 'chip-amber' : 'chip-accent'} tiny`}>
-          {entangled ? `entangled · |r| = ${purity.toFixed(2)}` : 'pure state'}
+    <div className="bloch" style={{ width: size, height: size + (label ? 22 : 0) }}>
+      <canvas ref={mount} className="bloch-gl" style={{ width: size, height: size }} />
+      {label && (
+        <span className="bloch-label tiny">
+          {label}
+          <span className="dim"> · {purity < 0.02 ? 'entangled' : `|r| = ${purity.toFixed(2)}`}</span>
         </span>
-      </div>
-      <div className="bloch-coords num tiny dim">
-        x {fmt(x)} &nbsp; y {fmt(y)} &nbsp; z {fmt(z)}
-      </div>
+      )}
     </div>
   );
 }
 
-const fmt = (v: number) => (Math.abs(v) < 5e-4 ? '0.00' : v.toFixed(2));
-
-/** 2D fallback used when WebGL is unavailable or the device is very weak. */
-export function BlochFlat({ x, y, z, purity, label, size = 150 }: BlochProps) {
-  const r = size / 2 - 14;
+/**
+ * The no-WebGL fallback: an honest flat projection rather than a blank box.
+ * Kept because a device without WebGL should still be able to read the state.
+ */
+export function BlochFlat({ x, y, z, purity, label, size = 120, accent = '#6ee7ff' }: BlochProps) {
+  const r = size / 2 - 8;
   const cx = size / 2, cy = size / 2;
-  const px = cx + x * r * 0.86 + y * r * 0.34;
-  const py = cy - z * r * 0.86 + y * r * 0.2;
+  const px = cx + x * r * 0.92;
+  const py = cy - z * r * 0.92;
+  const faded = Math.max(0.12, purity);
+
   return (
-    <div className="bloch">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-label={label}>
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--glass-border)" strokeWidth="1" />
-        <ellipse cx={cx} cy={cy} rx={r} ry={r * 0.34} fill="none" stroke="var(--accent)" strokeWidth="1" opacity=".3" />
-        <line x1={cx} y1={cy - r} x2={cx} y2={cy + r} stroke="var(--glass-border)" strokeWidth="1" opacity=".5" />
-        <line x1={cx - r} y1={cy} x2={cx + r} y2={cy} stroke="var(--glass-border)" strokeWidth="1" opacity=".5" />
-        {purity > 0.02 && (
+    <div className="bloch" style={{ width: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`Bloch vector for ${label ?? 'qubit'}`}>
+        <defs>
+          <radialGradient id={`bg-${label ?? 'q'}`} cx="38%" cy="32%">
+            <stop offset="0%" stopColor="#1a2b4d" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#0a1220" stopOpacity="0.35" />
+          </radialGradient>
+        </defs>
+        <circle cx={cx} cy={cy} r={r} fill={`url(#bg-${label ?? 'q'})`} />
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#7fa8e0" strokeOpacity="0.32" />
+        <ellipse cx={cx} cy={cy} rx={r} ry={r * 0.3} fill="none" stroke={accent} strokeOpacity="0.3" />
+        <line x1={cx} y1={cy - r} x2={cx} y2={cy + r} stroke="#6ef0c8" strokeOpacity="0.2" />
+        <line x1={cx - r} y1={cy} x2={cx + r} y2={cy} stroke="#ff8fa8" strokeOpacity="0.2" />
+        <text x={cx} y={cy - r - 1} fontSize="9" fill="#eaf4ff" opacity="0.75" textAnchor="middle">|0⟩</text>
+        <text x={cx} y={cy + r + 8} fontSize="9" fill="#9fb4d8" opacity="0.7" textAnchor="middle">|1⟩</text>
+        {purity > 0.02 ? (
           <>
-            <line x1={cx} y1={cy} x2={px} y2={py} stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" />
-            <circle cx={px} cy={py} r="5.5" fill="var(--accent)" />
+            <line x1={cx} y1={cy} x2={px} y2={py} stroke={accent} strokeWidth="2.2" strokeOpacity={faded} strokeLinecap="round" />
+            <circle cx={px} cy={py} r="4.4" fill={accent} fillOpacity={faded} />
           </>
+        ) : (
+          <circle cx={cx} cy={cy} r="6" fill="#ffc46b" fillOpacity="0.85" />
         )}
-        <circle cx={cx} cy={cy} r={3 + (1 - purity) * 6} fill="var(--amber)" opacity={1 - purity} />
       </svg>
-      <div className="bloch-meta">{label && <span className="bloch-label">{label}</span>}</div>
+      {label && (
+        <span className="bloch-label tiny">
+          {label}
+          <span className="dim"> · {purity < 0.02 ? 'entangled' : `|r| = ${purity.toFixed(2)}`}</span>
+        </span>
+      )}
     </div>
   );
 }

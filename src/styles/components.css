@@ -526,3 +526,8 @@
 .row-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
 .badge-panel { display: grid; gap: 10px; padding: 16px 18px; }
 .badge-panel p { margin: 0; }
+
+/* A shared-renderer view. The canvas is blitted into each frame; sizing lives in the
+   style attribute so the renderer can read clientWidth/clientHeight. */
+.bloch-gl { display: block; border-radius: 50%; }
+.bloch-gl:active { cursor: grabbing; }
