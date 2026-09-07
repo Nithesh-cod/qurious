@@ -44,17 +44,29 @@ correct answer passes.
 and wanders the screen. On Android it uses the platform's own TextToSpeech and
 SpeechRecognizer, in nine Indian languages.
 
-Also: 8 lessons, 15 challenges, 19 quiz questions, Bayesian Knowledge Tracing over a
-concept graph, and an instructor view.
+**Algorithms, not just gates.** Oracles and phase kickback, Deutsch–Jozsa,
+Bernstein–Vazirani, Grover, GHZ states, superdense coding, teleportation, the quantum
+Fourier transform and phase estimation — each a runnable circuit, not a diagram.
+
+Also: 16 lessons across 5 modules, each ending in a check that earns a badge;
+15 challenges, 19 quiz questions, Bayesian Knowledge Tracing over a concept graph,
+and an instructor view.
 
 ## Correctness
 
 The simulator is cross-checked against Qiskit Aer over 22 circuits. Worst disagreement:
 **6.66 × 10⁻¹⁶**.
 
+Lesson content is held to the same standard: `tests/algorithms.test.ts` asserts every
+physics claim the algorithm lessons make against the simulator, so prose that lies about
+its own circuit fails the build. Phase estimation gets a second, independent check —
+its bit ordering is confirmed against Qiskit rather than against our own engine, because
+a shared misunderstanding between simulator and test would otherwise go unnoticed.
+
 ```bash
-npx vitest run            # 146 tests
-python server/crosscheck.py   # the Qiskit comparison (needs qiskit + qiskit-aer)
+npx vitest run                    # 169 tests
+python server/crosscheck.py       # the Qiskit comparison (needs qiskit + qiskit-aer)
+python server/qpe_crosscheck.py   # phase estimation, verified independently
 ```
 
 ## Running it
@@ -93,7 +105,7 @@ key baked in at build time would ship inside the bundle for anyone to read.
 src/core/      simulator, circuit IR, transpilers, noise, grading, knowledge base, tutor
 src/ui/        canvas, code panel, state views, Noise Lab, 3D avatar
 src/content/   lessons, challenges, quizzes — data, not code
-tests/         146 tests, including the Qiskit cross-check fixture
+tests/         169 tests: physics, content claims, and the Qiskit cross-check fixtures
 server/        optional FastAPI service and the Qiskit comparison script
 scripts/       APK build and Android branding generation
 docs/          the SIH submission deck and the competitive comparison
