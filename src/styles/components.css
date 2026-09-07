@@ -435,3 +435,94 @@
 @media (max-width: 760px) {
   .noiselab-row { grid-template-columns: 50px 1fr 62px; gap: 7px; }
 }
+
+/* ---------------------------------------------------------------- modules */
+/* Learn is organised as modules: a few lessons, a check, a badge. These styles carry
+   that shape — a progress bar you can read at a glance, and a badge that looks like a
+   reward rather than another chip. */
+
+.module-card {
+  position: relative;
+  /* A <button> centres its text by default. Without this the whole card reads as a
+     banner rather than a card, which is how it first shipped. */
+  appearance: none; cursor: pointer; font: inherit; text-align: left; color: inherit;
+  padding: 16px; display: grid; gap: 7px; align-content: start;
+}
+.module-card h3 { margin: 0; }
+.module-card p { margin: 0; }
+.module-bar {
+  display: block; height: 5px; border-radius: 99px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  overflow: hidden; margin: 10px 0 2px;
+}
+.module-bar > i {
+  display: block; height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width var(--t-mid) var(--ease-liquid);
+}
+
+.lesson-track { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.lesson-row {
+  width: 100%; display: flex; align-items: center; gap: 13px;
+  padding: 13px 15px; border-radius: var(--r-lg);
+  text-align: left; cursor: pointer; color: var(--ink);
+  border: 1px solid var(--glass-border); background: var(--glass-bg);
+}
+.lesson-row-n {
+  flex: none; width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 13.5px; font-weight: 600;
+  background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--ink);
+}
+.lesson-row.is-done .lesson-row-n {
+  background: color-mix(in srgb, var(--mint) 30%, transparent);
+}
+.lesson-row-main { display: grid; gap: 3px; min-width: 0; flex: 1; }
+.lesson-row-main strong { font-size: 15px; font-weight: 600; }
+
+.module-check-cta {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 18px; margin-top: 18px;
+}
+.module-check-cta.is-earned {
+  border-color: color-mix(in srgb, var(--mint) 45%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--mint) 22%, transparent) inset;
+}
+.module-check-copy { flex: 1; min-width: 190px; display: grid; gap: 4px; }
+.module-check-copy h3 { margin: 0; }
+.module-check-copy p { margin: 0; }
+
+.badge-award-emoji {
+  font-size: 40px; line-height: 1; flex: none;
+  filter: drop-shadow(0 4px 14px color-mix(in srgb, var(--accent) 45%, transparent));
+}
+.badge-award { display: flex; align-items: center; gap: 18px; padding: 20px; }
+.badge-award h2 { margin: 2px 0 4px; }
+
+.badge-shelf { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 14px; }
+.badge-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 13px; border-radius: var(--r-pill);
+  font-size: 13px; font-weight: 600; color: var(--ink);
+  border: 1px solid color-mix(in srgb, var(--mint) 45%, transparent);
+  background: color-mix(in srgb, var(--mint) 14%, transparent);
+}
+.badge-chip.is-locked {
+  border-color: var(--glass-border);
+  background: transparent; color: var(--ink-3); font-weight: 500;
+}
+.badge-chip.is-locked > span[aria-hidden] { filter: grayscale(1); opacity: .5; }
+
+/* The dots that show where you are in a module check. */
+.check-track { display: flex; gap: 7px; margin: 2px 0 14px; }
+.check-pip {
+  width: 26px; height: 5px; border-radius: 99px;
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+}
+.check-pip.ok  { background: var(--mint); }
+.check-pip.no  { background: var(--rose, #ff6b8a); }
+.check-pip.now { background: var(--accent); }
+
+.row-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.badge-panel { display: grid; gap: 10px; padding: 16px 18px; }
+.badge-panel p { margin: 0; }

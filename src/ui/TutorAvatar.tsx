@@ -60,9 +60,9 @@ export function TutorAvatar({ mood, llm, lang, onLangChange, contextHint }: {
   contextHint?: string;
 }) {
   const [open, setOpen] = useState(false);
-  // 150 on a phone put a 39%-of-screen-wide sprite in the middle of the content; on a
-  // 384px viewport that lands on top of whatever button is under it.
-  const avatarSize = typeof window !== 'undefined' && window.innerWidth < 760 ? 122 : 210;
+  // Small enough to read as a companion rather than an obstruction: 92px is a quarter
+  // of a 384px phone screen, against 150px originally, which covered whole buttons.
+  const avatarSize = typeof window !== 'undefined' && window.innerWidth < 760 ? 92 : 158;
   const [pos, setPos] = useState(() => loadPos(avatarSize));
   const [state, setState] = useState<AvatarState>('idle');
   const [level, setLevel] = useState(0);

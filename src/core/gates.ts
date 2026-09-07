@@ -59,6 +59,9 @@ export function matrixFor(name: GateName, params?: number[]): Mat2 | null {
     case 'cx': case 'ccx': return X;
     case 'cy': return Y;
     case 'cz': return Z;
+    // Controlled phase: the same diagonal phase, gated on the control. This is the
+    // gate the Fourier transform and phase estimation are built out of.
+    case 'cp': return P(p);
     default: return null;
   }
 }

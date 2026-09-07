@@ -884,6 +884,15 @@ export const QUIZZES: QuizItem[] = [
   },
 ];
 
+import { ALGORITHM_LESSONS } from './algorithms';
+
+/**
+ * Everything the Learn page can show. The algorithm lessons live in their own file
+ * because every circuit in them is asserted against the simulator by
+ * tests/algorithms.test.ts.
+ */
+export const ALL_LESSONS: Lesson[] = [...LESSONS, ...ALGORITHM_LESSONS];
+
 export const QUIZ_BY_CONCEPT = (concept: string) => QUIZZES.filter(q => q.concept === concept);
 export const CHALLENGE_BY_CONCEPT = (concept: string) => CHALLENGES.filter(c => c.concept === concept);
 export const LESSON_BY_CONCEPT = (concept: string) => LESSONS.find(l => l.concept === concept);

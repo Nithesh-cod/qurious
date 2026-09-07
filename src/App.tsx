@@ -6,13 +6,17 @@ import { grade, type Challenge } from './core/grade';
 import {
   CONCEPTS, cohortWeakest, initialMastery, isMastered, isUnlocked, observe, recommend, type Mastery,
 } from './core/bkt';
-import { CHALLENGES, LESSONS, QUIZZES, type Lesson, type QuizItem } from './content/curriculum';
+import { ALL_LESSONS, CHALLENGES, LESSONS, QUIZZES, type Lesson, type QuizItem } from './content/curriculum';
 import { CircuitCanvas } from './ui/CircuitCanvas';
 import { BlochSphere, BlochFlat } from './ui/BlochSphere';
 import { AmplitudeBars, Histogram, KetLine, ProbabilityTable } from './ui/StateViews';
 import { CodePanel } from './ui/CodePanel';
 import { TutorPanel } from './ui/TutorPanel';
 import { QuizView } from './ui/QuizView';
+import { ModuleCheck } from './ui/ModuleCheck';
+import {
+  MODULES, earnedBadges, lessonsOf, moduleProgress, unmoduledLessons,
+} from './content/modules';
 import { AnimatedExplainer } from './ui/AnimatedExplainer';
 import { NoiseLab } from './ui/NoiseLab';
 import { useSlideIn } from './ui/useSlideIn';
@@ -56,7 +60,7 @@ function save(s: Saved) {
 
 export default function App() {
   const [saved, setSaved] = useState<Saved>(load);
-  const [view, setView] = useState<View>('build');
+  const [view, setView] = useState<View>('learn');
   const [circuit, setCircuit] = useState<Circuit>(() => saved.circuit ?? {
     version: 1, name: 'Scratch', qubits: 2,
     ops: [{ id: 'seed1', name: 'h', qubits: [0] }, { id: 'seed2', name: 'cx', qubits: [0, 1] }],
@@ -127,9 +131,10 @@ export default function App() {
     react(correct ? 'celebrate' : 'encourage');
   }, [react]);
 
+  // Learn comes first: a newcomer should meet a lesson before an empty canvas.
   const nav: { id: View; label: string; icon: JSX.Element }[] = [
-    { id: 'build', label: 'Build', icon: <IconBuild /> },
     { id: 'learn', label: 'Learn', icon: <IconLearn /> },
+    { id: 'build', label: 'Build', icon: <IconBuild /> },
     { id: 'practice', label: 'Practice', icon: <IconQuiz /> },
     { id: 'challenges', label: 'Challenges', icon: <IconChallenge /> },
     { id: 'dashboard', label: 'Dashboard', icon: <IconProgress /> },
@@ -185,6 +190,7 @@ export default function App() {
             lesson={activeLesson} setLesson={setActiveLesson}
             mastery={saved.mastery} done={saved.lessonsDone} onDone={markLessonDone}
             onTry={c => { setCircuitSafe(cloneCircuit(c)); setView('build'); }}
+            quizAnswers={saved.quizAnswers} onQuizAnswer={recordQuiz}
           />
         )}
 
@@ -365,34 +371,145 @@ function BuildView({ circuit, setCircuit, state, error, diagnostics, step, setSt
 
 /* ------------------------------------------------------------------ learn */
 
-function LearnView({ lesson, setLesson, mastery, done, onDone, onTry }: {
+function LearnView({ lesson, setLesson, mastery, done, onDone, onTry, quizAnswers, onQuizAnswer }: {
   lesson: Lesson | null; setLesson: (l: Lesson | null) => void;
   mastery: Mastery; done: string[]; onDone: (l: Lesson) => void;
   onTry: (c: Circuit) => void;
+  quizAnswers: Record<string, boolean>;
+  onQuizAnswer: (item: QuizItem, correct: boolean) => void;
 }) {
+  // Which module the learner has opened, and whether they are sitting its check.
+  const [openModule, setOpenModule] = useState<string | null>(null);
+  const [checking, setChecking] = useState<string | null>(null);
+
+  const active = MODULES.find(m => m.id === (checking ?? openModule)) ?? null;
+
+  if (!lesson && checking && active) {
+    return (
+      <div className="stage stage-single scroll">
+        <ModuleCheck
+          module={active}
+          lessonsDone={done}
+          quizAnswers={quizAnswers}
+          onAnswer={onQuizAnswer}
+          onBack={() => setChecking(null)}
+          onRetry={() => {}}
+        />
+      </div>
+    );
+  }
+
+  if (!lesson && active) {
+    const prog = moduleProgress(active, done, quizAnswers);
+    const lessons = lessonsOf(active);
+    return (
+      <div className="stage stage-single scroll">
+        <div className="reading">
+          <button className="btn btn-sm btn-ghost rise" onClick={() => setOpenModule(null)}>← All modules</button>
+          <div className="quiz-top rise">
+            <h1>{active.title}</h1>
+            <span className={`chip ${prog.earned ? 'chip-mint' : ''}`}>{prog.percent}%</span>
+          </div>
+          <p className="rise rise-1">{active.blurb}</p>
+
+          <ol className="lesson-track rise rise-1">
+            {lessons.map((l, i) => (
+              <li key={l.id}>
+                <button className={`glass glass-hover lesson-row ${done.includes(l.id) ? 'is-done' : ''}`} onClick={() => setLesson(l)}>
+                  <span className="lesson-row-n">{done.includes(l.id) ? '✓' : i + 1}</span>
+                  <span className="lesson-row-main">
+                    <strong>{l.title}</strong>
+                    <span className="tiny dim">{l.summary}</span>
+                  </span>
+                  <span className="chip tiny">{l.minutes} min</span>
+                </button>
+              </li>
+            ))}
+          </ol>
+
+          <article className={`glass panel module-check-cta rise rise-2 ${prog.earned ? 'is-earned' : ''}`}>
+            <span className="badge-award-emoji" aria-hidden>{active.badge.emoji}</span>
+            <div className="module-check-copy">
+              <h3>{prog.earned ? `Earned: ${active.badge.name}` : `Badge: ${active.badge.name}`}</h3>
+              <p className="tiny dim">{active.badge.earnedFor}</p>
+              <p className="tiny dim">
+                {prog.lessonsDone}/{prog.lessonsTotal} lessons read
+                {prog.checkTotal > 0 && ` · check ${prog.checkRight}/${prog.checkTotal}`}
+              </p>
+            </div>
+            <button className="btn btn-primary" onClick={() => setChecking(active.id)}>
+              {prog.checkPassed ? 'Retake the check' : 'Take the check'}
+            </button>
+          </article>
+        </div>
+      </div>
+    );
+  }
+
   if (!lesson) {
+    const earned = earnedBadges(done, quizAnswers);
+    const extra = unmoduledLessons();
     return (
       <div className="stage stage-single scroll">
         <div className="reading">
           <div className="quiz-top rise">
-            <h1>Lessons</h1>
-            <span className="chip tiny">{done.length}/{LESSONS.length} completed</span>
+            <h1>Learn</h1>
+            <span className="chip tiny">{done.length}/{ALL_LESSONS.length} lessons</span>
           </div>
-          <p className="rise rise-1">Short, and every one of them has a live circuit you can pull apart. Nothing here is a video you watch.</p>
+          <p className="rise rise-1">
+            Work through a module, take its check, earn its badge. Every lesson has a live circuit
+            you can pull apart — nothing here is a video you watch.
+          </p>
+
+          {earned.length > 0 && (
+            <div className="badge-shelf rise rise-1">
+              {earned.map(bg => (
+                <span key={bg.id} className="badge-chip" title={bg.earnedFor}>
+                  <span aria-hidden>{bg.emoji}</span> {bg.name}
+                </span>
+              ))}
+            </div>
+          )}
+
           <div className="card-grid">
-            {LESSONS.map((l, i) => (
-              <button key={l.id} className={`glass glass-hover lesson-card rise rise-${Math.min(i + 1, 3)}`} onClick={() => setLesson(l)}>
-                <div className="lesson-card-top">
-                  <span className="chip chip-accent tiny">{l.minutes} min</span>
-                  {done.includes(l.id) && <span className="chip chip-mint tiny">completed</span>}
-                  {isMastered(mastery, l.concept) && <span className="chip chip-mint tiny">mastered</span>}
-                </div>
-                <h3>{l.title}</h3>
-                <p className="tiny dim">{l.summary}</p>
-                <span className="lesson-card-go tiny">{l.steps.length} steps →</span>
-              </button>
-            ))}
+            {MODULES.map((m, i) => {
+              const prog = moduleProgress(m, done, quizAnswers);
+              return (
+                <button key={m.id} className={`glass glass-hover module-card rise rise-${Math.min(i + 1, 3)}`} onClick={() => setOpenModule(m.id)}>
+                  <div className="lesson-card-top">
+                    <span className="chip chip-accent tiny">{prog.lessonsTotal} lessons</span>
+                    {prog.earned
+                      ? <span className="chip chip-mint tiny">{m.badge.emoji} earned</span>
+                      : <span className="chip tiny">{prog.percent}%</span>}
+                  </div>
+                  <h3>{m.title}</h3>
+                  <p className="tiny dim">{m.blurb}</p>
+                  <span className="module-bar" aria-hidden><i style={{ width: `${prog.percent}%` }} /></span>
+                  <span className="lesson-card-go tiny">Open module →</span>
+                </button>
+              );
+            })}
           </div>
+
+          {extra.length > 0 && (
+            <>
+              <h2 className="rise rise-2">More lessons</h2>
+              <div className="card-grid">
+                {extra.map(l => (
+                  <button key={l.id} className="glass glass-hover lesson-card" onClick={() => setLesson(l)}>
+                    <div className="lesson-card-top">
+                      <span className="chip chip-accent tiny">{l.minutes} min</span>
+                      {done.includes(l.id) && <span className="chip chip-mint tiny">completed</span>}
+                      {isMastered(mastery, l.concept) && <span className="chip chip-mint tiny">mastered</span>}
+                    </div>
+                    <h3>{l.title}</h3>
+                    <p className="tiny dim">{l.summary}</p>
+                    <span className="lesson-card-go tiny">{l.steps.length} steps →</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
@@ -589,8 +706,11 @@ function DashboardView({ mastery, solved, lessonsDone, quizAnswers, onGo }: {
   const strengths = ranked.filter(c => (mastery[c.id] ?? 0) >= 0.6).slice(0, 3);
   const weaknesses = [...ranked].reverse().filter(c => (mastery[c.id] ?? 0) < 0.6).slice(0, 3);
 
+  const badges = earnedBadges(lessonsDone, quizAnswers);
+
   const stats = [
-    { label: 'Lessons completed', value: `${lessonsDone.length}/${LESSONS.length}`, view: 'learn' as View },
+    { label: 'Badges earned', value: `${badges.length}/${MODULES.length}`, view: 'learn' as View },
+    { label: 'Lessons completed', value: `${lessonsDone.length}/${ALL_LESSONS.length}`, view: 'learn' as View },
     { label: 'Challenges solved', value: `${solved.length}/${CHALLENGES.length}`, view: 'challenges' as View },
     { label: 'Quiz accuracy', value: quizDone ? `${Math.round((quizRight / quizDone) * 100)}%` : '—', view: 'practice' as View },
     { label: 'Questions answered', value: `${quizDone}/${QUIZZES.length}`, view: 'practice' as View },
@@ -600,6 +720,31 @@ function DashboardView({ mastery, solved, lessonsDone, quizAnswers, onGo }: {
     <div className="stage stage-single scroll">
       <div className="reading reading-wide">
         <h1 className="rise">Your dashboard</h1>
+
+        {/* Badges first: progress you can see beats a percentage you have to interpret. */}
+        <section className="glass panel rise rise-1 badge-panel">
+          <span className="section-label">Badges</span>
+          <div className="badge-shelf">
+            {MODULES.map(m => {
+              const prog = moduleProgress(m, lessonsDone, quizAnswers);
+              return (
+                <span
+                  key={m.badge.id}
+                  className={`badge-chip ${prog.earned ? '' : 'is-locked'}`}
+                  title={prog.earned ? m.badge.earnedFor
+                    : `${prog.lessonsDone}/${prog.lessonsTotal} lessons read, check ${prog.checkRight}/${prog.checkTotal}`}
+                >
+                  <span aria-hidden>{m.badge.emoji}</span> {m.badge.name}
+                </span>
+              );
+            })}
+          </div>
+          <p className="tiny dim">
+            {badges.length === MODULES.length
+              ? 'Every module finished. Try the challenges next.'
+              : 'A badge needs both halves: every lesson in the module read, and its check passed.'}
+          </p>
+        </section>
 
         <div className="stat-grid rise rise-1">
           {stats.map(st => (

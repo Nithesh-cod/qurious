@@ -45,7 +45,7 @@ const rad = (v: number) => {
 
 const QASM_NAME: Partial<Record<GateName, string>> = {
   i: 'id', x: 'x', y: 'y', z: 'z', h: 'h', s: 's', sdg: 'sdg', t: 't', tdg: 'tdg',
-  rx: 'rx', ry: 'ry', rz: 'rz', p: 'p', cx: 'cx', cy: 'cy', cz: 'cz',
+  rx: 'rx', ry: 'ry', rz: 'rz', p: 'p', cx: 'cx', cy: 'cy', cz: 'cz', cp: 'cp',
   swap: 'swap', ccx: 'ccx', cswap: 'cswap',
 };
 
@@ -141,6 +141,7 @@ const QISKIT_CALL: Partial<Record<GateName, (o: GateOp) => string>> = {
   cx: o => `qc.cx(${o.qubits[0]}, ${o.qubits[1]})`,
   cy: o => `qc.cy(${o.qubits[0]}, ${o.qubits[1]})`,
   cz: o => `qc.cz(${o.qubits[0]}, ${o.qubits[1]})`,
+  cp: o => `qc.cp(${rad(o.params![0])}, ${o.qubits[0]}, ${o.qubits[1]})`,
   swap: o => `qc.swap(${o.qubits[0]}, ${o.qubits[1]})`,
   ccx: o => `qc.ccx(${o.qubits[0]}, ${o.qubits[1]}, ${o.qubits[2]})`,
   cswap: o => `qc.cswap(${o.qubits[0]}, ${o.qubits[1]}, ${o.qubits[2]})`,
@@ -184,6 +185,7 @@ const CIRQ_CALL: Partial<Record<GateName, (o: GateOp) => string>> = {
   cx: o => `cirq.CNOT(q[${o.qubits[0]}], q[${o.qubits[1]}])`,
   cy: o => `cirq.ControlledGate(cirq.Y)(q[${o.qubits[0]}], q[${o.qubits[1]}])`,
   cz: o => `cirq.CZ(q[${o.qubits[0]}], q[${o.qubits[1]}])`,
+  cp: o => `cirq.CZ(q[${o.qubits[0]}], q[${o.qubits[1]}]) ** (${rad(o.params![0])} / np.pi)`,
   swap: o => `cirq.SWAP(q[${o.qubits[0]}], q[${o.qubits[1]}])`,
   ccx: o => `cirq.TOFFOLI(q[${o.qubits[0]}], q[${o.qubits[1]}], q[${o.qubits[2]}])`,
   cswap: o => `cirq.FREDKIN(q[${o.qubits[0]}], q[${o.qubits[1]}], q[${o.qubits[2]}])`,
@@ -225,6 +227,7 @@ const PL_CALL: Partial<Record<GateName, (o: GateOp) => string>> = {
   cx: o => `qml.CNOT(wires=[${o.qubits[0]}, ${o.qubits[1]}])`,
   cy: o => `qml.CY(wires=[${o.qubits[0]}, ${o.qubits[1]}])`,
   cz: o => `qml.CZ(wires=[${o.qubits[0]}, ${o.qubits[1]}])`,
+  cp: o => `qml.ControlledPhaseShift(${rad(o.params![0])}, wires=[${o.qubits[0]}, ${o.qubits[1]}])`,
   swap: o => `qml.SWAP(wires=[${o.qubits[0]}, ${o.qubits[1]}])`,
   ccx: o => `qml.Toffoli(wires=[${o.qubits[0]}, ${o.qubits[1]}, ${o.qubits[2]}])`,
   cswap: o => `qml.CSWAP(wires=[${o.qubits[0]}, ${o.qubits[1]}, ${o.qubits[2]}])`,
@@ -261,7 +264,7 @@ export function transpile(c: Circuit, target: Target): string {
 const QISKIT_METHOD: Record<string, GateName> = {
   id: 'i', x: 'x', y: 'y', z: 'z', h: 'h', s: 's', sdg: 'sdg', t: 't', tdg: 'tdg',
   rx: 'rx', ry: 'ry', rz: 'rz', p: 'p', u1: 'p',
-  cx: 'cx', cnot: 'cx', cy: 'cy', cz: 'cz', swap: 'swap',
+  cx: 'cx', cnot: 'cx', cy: 'cy', cz: 'cz', cp: 'cp', cu1: 'cp', swap: 'swap',
   ccx: 'ccx', toffoli: 'ccx', cswap: 'cswap', fredkin: 'cswap',
   measure: 'measure', barrier: 'barrier',
 };

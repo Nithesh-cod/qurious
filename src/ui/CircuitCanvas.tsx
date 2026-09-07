@@ -22,7 +22,7 @@ export const PALETTE: { group: string; gates: GateName[] }[] = [
   { group: 'Single qubit', gates: ['h', 'x', 'y', 'z'] },
   { group: 'Phase', gates: ['s', 'sdg', 't', 'tdg'] },
   { group: 'Rotations', gates: ['rx', 'ry', 'rz', 'p'] },
-  { group: 'Two qubit', gates: ['cx', 'cz', 'cy', 'swap'] },
+  { group: 'Two qubit', gates: ['cx', 'cz', 'cp', 'cy', 'swap'] },
   { group: 'Three qubit', gates: ['ccx', 'cswap'] },
   { group: 'Other', gates: ['measure', 'barrier'] },
 ];
@@ -310,6 +310,7 @@ function GateGlyph({ op, col, selected, onSelect, readOnly }: {
               );
             }
             if (op.name === 'cz') return <circle key={`t${q}`} cx={cx} cy={y} r="6.5" fill={tint} />;
+            if (op.name === 'cp') return <circle key={`t${q}`} cx={cx} cy={y} r="6.5" fill={tint} />;
             if (op.name === 'measure') {
               return (
                 <g key={`t${q}`}>

@@ -15,19 +15,19 @@ export type GateName =
   | 'i' | 'x' | 'y' | 'z' | 'h'
   | 's' | 'sdg' | 't' | 'tdg'
   | 'rx' | 'ry' | 'rz' | 'p'
-  | 'cx' | 'cy' | 'cz' | 'swap'
+  | 'cx' | 'cy' | 'cz' | 'cp' | 'swap'
   | 'ccx' | 'cswap'
   | 'measure' | 'barrier';
 
 /** Gates that take a single rotation/phase parameter, in radians. */
-export const PARAMETRIC: GateName[] = ['rx', 'ry', 'rz', 'p'];
+export const PARAMETRIC: GateName[] = ['rx', 'ry', 'rz', 'p', 'cp'];
 
 /** How many target qubits each operation consumes. */
 export const ARITY: Record<GateName, number> = {
   i: 1, x: 1, y: 1, z: 1, h: 1,
   s: 1, sdg: 1, t: 1, tdg: 1,
   rx: 1, ry: 1, rz: 1, p: 1,
-  cx: 2, cy: 2, cz: 2, swap: 2,
+  cx: 2, cy: 2, cz: 2, cp: 2, swap: 2,
   ccx: 3, cswap: 3,
   measure: 1, barrier: 1,
 };
@@ -38,7 +38,7 @@ export interface GateOp {
   name: GateName;
   /**
    * Qubits the operation acts on, in canonical order.
-   * cx/cy/cz: [control, target].  swap: [a, b].
+   * cx/cy/cz/cp: [control, target].  swap: [a, b].
    * ccx: [control1, control2, target].  cswap: [control, a, b].
    */
   qubits: number[];
@@ -83,7 +83,7 @@ export const GATE_LABEL: Record<GateName, string> = {
   i: 'I', x: 'X', y: 'Y', z: 'Z', h: 'H',
   s: 'S', sdg: 'S†', t: 'T', tdg: 'T†',
   rx: 'RX', ry: 'RY', rz: 'RZ', p: 'P',
-  cx: 'CNOT', cy: 'CY', cz: 'CZ', swap: 'SWAP',
+  cx: 'CNOT', cy: 'CY', cz: 'CZ', cp: 'CP', swap: 'SWAP',
   ccx: 'Toffoli', cswap: 'Fredkin',
   measure: 'Measure', barrier: 'Barrier',
 };
@@ -104,6 +104,7 @@ export const GATE_BLURB: Record<GateName, string> = {
   p: 'Phase gate. Adds phase λ to |1⟩.',
   cx: 'Controlled NOT. Flips the target when the control is |1⟩ — the standard way to create entanglement.',
   cy: 'Controlled Y.',
+  cp: 'Controlled phase. Adds a phase to |11⟩ only — the building block of the quantum Fourier transform and phase estimation.',
   cz: 'Controlled Z. Adds a phase of −1 only when both qubits are |1⟩.',
   swap: 'Exchanges the states of two qubits.',
   ccx: 'Toffoli. Flips the target only when both controls are |1⟩.',
@@ -115,7 +116,7 @@ export const GATE_BLURB: Record<GateName, string> = {
 /** Which qubits of an op are controls (for canvas rendering). */
 export function controlsOf(o: GateOp): number[] {
   switch (o.name) {
-    case 'cx': case 'cy': case 'cz': return [o.qubits[0]];
+    case 'cx': case 'cy': case 'cz': case 'cp': return [o.qubits[0]];
     case 'ccx': return [o.qubits[0], o.qubits[1]];
     case 'cswap': return [o.qubits[0]];
     default: return [];
@@ -125,7 +126,7 @@ export function controlsOf(o: GateOp): number[] {
 /** Which qubits of an op are acted on (for canvas rendering). */
 export function targetsOf(o: GateOp): number[] {
   switch (o.name) {
-    case 'cx': case 'cy': case 'cz': return [o.qubits[1]];
+    case 'cx': case 'cy': case 'cz': case 'cp': return [o.qubits[1]];
     case 'ccx': return [o.qubits[2]];
     case 'cswap': return [o.qubits[1], o.qubits[2]];
     case 'swap': return [o.qubits[0], o.qubits[1]];

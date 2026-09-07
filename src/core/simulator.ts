@@ -151,7 +151,7 @@ export function rng(seed = 0x9e3779b9): () => number {
 
 function controlMaskFor(o: GateOp): number {
   switch (o.name) {
-    case 'cx': case 'cy': case 'cz': return 1 << o.qubits[0];
+    case 'cx': case 'cy': case 'cz': case 'cp': return 1 << o.qubits[0];
     case 'ccx': return (1 << o.qubits[0]) | (1 << o.qubits[1]);
     case 'cswap': return 1 << o.qubits[0];
     default: return 0;
@@ -160,7 +160,7 @@ function controlMaskFor(o: GateOp): number {
 
 function targetOf(o: GateOp): number {
   switch (o.name) {
-    case 'cx': case 'cy': case 'cz': return o.qubits[1];
+    case 'cx': case 'cy': case 'cz': case 'cp': return o.qubits[1];
     case 'ccx': return o.qubits[2];
     default: return o.qubits[0];
   }

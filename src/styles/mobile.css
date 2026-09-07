@@ -112,12 +112,33 @@
   .nav { display: none; }
 
   .stage { padding: 10px; gap: 10px; }
-  .stage-build, .stage-single { grid-template-columns: minmax(0, 1fr); }
+  .stage-single { grid-template-columns: minmax(0, 1fr); }
 
-  /* On a phone the build view is one scrolling column, not a fixed grid. */
-  .col-build { grid-template-rows: none; grid-auto-rows: min-content; }
-  .stage-build { grid-template-rows: none; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-  .stage-build > .col { display: contents; }
+  /*
+    On a phone the build view is one scrolling column.
+
+    It used to stay a grid with `display: contents` on the columns. A grid with a
+    definite height distributes its rows to fill that height, so the panels were
+    compressed to fit instead of overflowing — scrollHeight equalled clientHeight and
+    there was physically nothing to scroll. Block flow lets the children take their
+    natural height and push past the bottom, which is what makes the container scroll.
+  */
+  .stage-build {
+    display: block;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+  .stage-build > .col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+  }
+  /* Panels size to their content here; nothing may shrink to make the column fit. */
+  .stage-build > .col > * { flex: 0 0 auto; }
+  /* Room to scroll past the bottom navigation bar. */
+  .stage-build > .col:last-child { padding-bottom: 8px; }
 
   /* Side panels become sheets, opened from the toolbar. */
   .side-tutor, .side-code { display: none; }
@@ -125,12 +146,34 @@
   .reading { padding: 4px 2px 20px; gap: 12px; }
   .reading h1 { font-size: 23px; }
 
+  /*
+    Reading sizes. Everything here is a deliberate step up from the desktop scale —
+    a phone is held further from the eye than a monitor is, and the old 14px body text
+    was hard work on a 384px-wide screen.
+  */
+  body { font-size: 15px; }
+  p { font-size: 16px; line-height: 1.68; }
+  h1 { font-size: 26px; }
+  h2 { font-size: 21px; }
+  h3 { font-size: 17.5px; }
+  .tiny { font-size: 13px; }
+  .lede, .lesson-body p, .reading p { font-size: 16.5px; line-height: 1.7; }
+  .ket-body { font-size: 15px; }
+  .card p, .card-grid p { font-size: 15px; }
+  .chip { font-size: 12.5px; }
+  .stat .num, .noiselab-stat .num { font-size: 22px; }
+  .quiz-option { font-size: 15.5px; }
+  .sheet-head h3 { font-size: 17px; }
+  .tutor-answer h4 { font-size: 16.5px; }
+  .tutor-answer p { font-size: 16px; line-height: 1.7; }
+  .section-label, .setting-label { font-size: 12px; }
+
   /* Touch targets: Android's minimum is 48dp. */
-  .btn { padding: 11px 16px; font-size: 13.5px; min-height: 44px; }
-  .btn-sm { padding: 9px 13px; min-height: 38px; }
+  .btn { padding: 11px 16px; font-size: 15px; min-height: 46px; }
+  .btn-sm { padding: 9px 13px; font-size: 13.5px; min-height: 40px; }
   .btn-icon { min-width: 44px; }
-  .seg button { padding: 10px 14px; min-height: 40px; }
-  .gate-chip { padding: 11px 13px; min-width: 46px; font-size: 13px; }
+  .seg button { padding: 10px 14px; font-size: 13.5px; min-height: 42px; }
+  .gate-chip { padding: 11px 14px; min-width: 48px; font-size: 14.5px; }
   .quiz-option { padding: 15px 16px; min-height: 52px; }
   .chip { padding: 6px 11px; }
 
@@ -176,7 +219,7 @@
     appearance: none; border: 0; background: transparent; cursor: pointer;
     display: grid; justify-items: center; align-content: center; gap: 3px;
     padding: 7px 2px 6px; border-radius: 16px; min-height: 52px;
-    color: var(--ink-3); font: inherit; font-size: 10px; font-weight: 500;
+    color: var(--ink-3); font: inherit; font-size: 11.5px; font-weight: 500;
     transition: color var(--t-fast) var(--ease-liquid), background var(--t-fast);
     -webkit-tap-highlight-color: transparent;
   }

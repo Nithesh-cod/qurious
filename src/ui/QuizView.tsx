@@ -9,15 +9,8 @@
 
 import { useMemo, useState } from 'react';
 import { QUIZZES, type QuizItem } from '../content/curriculum';
-import { gradeQuiz, optionsFor, type QuizResult } from '../core/quiz';
 import { CONCEPTS } from '../core/bkt';
-import { CircuitCanvas } from './CircuitCanvas';
-
-const KIND_LABEL: Record<QuizItem['kind'], string> = {
-  mcq: 'multiple choice',
-  truefalse: 'true or false',
-  predict: 'predict the output',
-};
+import { QuizCard } from './QuizCard';
 
 export function QuizView({ onAnswer, answered }: {
   onAnswer: (item: QuizItem, correct: boolean) => void;
@@ -25,34 +18,18 @@ export function QuizView({ onAnswer, answered }: {
 }) {
   const [conceptFilter, setConceptFilter] = useState<string>('all');
   const [index, setIndex] = useState(0);
-  const [picked, setPicked] = useState<string | null>(null);
-  const [result, setResult] = useState<QuizResult | null>(null);
 
   const pool = useMemo(
     () => (conceptFilter === 'all' ? QUIZZES : QUIZZES.filter(q => q.concept === conceptFilter)),
     [conceptFilter]
   );
   const item = pool[Math.min(index, pool.length - 1)];
-  const options = useMemo(() => (item ? optionsFor(item) : []), [item]);
 
-  const submit = () => {
-    if (!item || picked === null) return;
-    const r = gradeQuiz(item, picked);
-    setResult(r);
-    onAnswer(item, r.correct);
-  };
-
-  const next = () => {
-    setPicked(null);
-    setResult(null);
-    setIndex(i => (i + 1) % pool.length);
-  };
+  const next = () => setIndex(i => (i + 1) % pool.length);
 
   const jump = (concept: string) => {
     setConceptFilter(concept);
     setIndex(0);
-    setPicked(null);
-    setResult(null);
   };
 
   const correctCount = Object.values(answered).filter(Boolean).length;
@@ -84,60 +61,13 @@ export function QuizView({ onAnswer, answered }: {
         })}
       </div>
 
-      <article className="glass panel quiz-card rise rise-2" key={item.id}>
-        <div className="quiz-head">
-          <span className="chip tiny">{KIND_LABEL[item.kind]}</span>
-          <span className="tiny dim">question {index + 1} of {pool.length}</span>
-          {answered[item.id] !== undefined && (
-            <span className={`chip tiny ${answered[item.id] ? 'chip-mint' : 'chip-amber'}`}>
-              {answered[item.id] ? 'answered correctly' : 'previously missed'}
-            </span>
-          )}
-        </div>
-
-        <h2 className="quiz-question">{item.question}</h2>
-
-        {item.kind === 'predict' && (
-          <div className="quiz-circuit">
-            <CircuitCanvas circuit={item.circuit} onChange={() => {}} readOnly />
-          </div>
-        )}
-
-        <div className="quiz-options">
-          {options.map(o => {
-            const chosen = picked === o.value;
-            const isAnswer = result && o.label === result.expected;
-            const wrongPick = result && chosen && !result.correct;
-            return (
-              <button
-                key={o.value}
-                className={`quiz-option ${chosen ? 'chosen' : ''} ${isAnswer ? 'is-answer' : ''} ${wrongPick ? 'is-wrong' : ''}`}
-                onClick={() => !result && setPicked(o.value)}
-                disabled={!!result}
-              >
-                <span className="quiz-dot" aria-hidden />
-                <span>{o.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {!result ? (
-          <button className="btn btn-primary" onClick={submit} disabled={picked === null}>Check answer</button>
-        ) : (
-          <div className={`quiz-result ${result.correct ? 'ok' : 'no'}`}>
-            <h3>{result.correct ? 'Correct' : `Not quite — the answer is ${result.expected}`}</h3>
-            <p className="tiny">{result.explain}</p>
-            {result.evidence && (
-              <div className="quiz-evidence tiny mono">
-                <span className="dim">simulator output</span>
-                <span>{result.evidence}</span>
-              </div>
-            )}
-            <button className="btn btn-primary" onClick={next}>Next question</button>
-          </div>
-        )}
-      </article>
+      <QuizCard
+        item={item}
+        index={index}
+        total={pool.length}
+        previous={answered[item.id]}
+        onAnswered={(qi, correct) => { onAnswer(qi, correct); next(); }}
+      />
     </div>
   );
 }
