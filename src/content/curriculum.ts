@@ -10,6 +10,7 @@
 
 import { emptyCircuit, newId, type Circuit, type GateName } from '../core/ir';
 import type { Challenge } from '../core/grade';
+import { ALGORITHM_CHALLENGES } from './algorithmChallenges';
 import type { ExplainerScript } from '../ui/AnimatedExplainer';
 
 const g = (name: GateName, qubits: number[], params?: number[]) => ({
@@ -519,7 +520,7 @@ export const LESSONS: Lesson[] = [
 
 // ---------------------------------------------------------------- challenges
 
-export const CHALLENGES: Challenge[] = [
+const CORE_CHALLENGES: Challenge[] = [
   {
     id: 'ch-flip', title: 'Flip a qubit', concept: 'qubit',
     brief: 'Get the qubit from |0⟩ to |1⟩ with certainty.',
@@ -701,6 +702,12 @@ export const CHALLENGES: Challenge[] = [
     ],
   },
 ];
+
+/**
+ * The challenge set the app shows: the core ones above, then one behind each of the
+ * algorithm lessons. Kept in a separate file because the two grow independently.
+ */
+export const CHALLENGES: Challenge[] = [...CORE_CHALLENGES, ...ALGORITHM_CHALLENGES];
 
 // ---------------------------------------------------------------- quizzes
 
