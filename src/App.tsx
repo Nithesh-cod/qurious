@@ -19,6 +19,7 @@ import {
 } from './content/modules';
 import { AnimatedExplainer } from './ui/AnimatedExplainer';
 import { NoiseLab } from './ui/NoiseLab';
+import { AmplitudeField3D, MAX_STATES_3D } from './ui/AmplitudeField3D';
 import { useSlideIn } from './ui/useSlideIn';
 import { TutorAvatar, type TutorMood } from './ui/TutorAvatar';
 import { SettingsSheet } from './ui/SettingsSheet';
@@ -285,7 +286,7 @@ function BuildView({ circuit, setCircuit, state, error, diagnostics, step, setSt
   traceLength: number;
   onOpenSheet: (s: 'tutor' | 'code') => void;
 }) {
-  const [tab, setTab] = useState<'state' | 'outcomes' | 'noise' | 'table'>('state');
+  const [tab, setTab] = useState<'state' | 'phasors' | 'outcomes' | 'noise' | 'table'>('state');
   const errs = diagnostics.filter(d => d.severity === 'error');
   const warns = diagnostics.filter(d => d.severity === 'warning');
 
@@ -319,6 +320,7 @@ function BuildView({ circuit, setCircuit, state, error, diagnostics, step, setSt
           <div className="build-state-head">
             <div className="seg">
               <button aria-pressed={tab === 'state'} onClick={() => setTab('state')}>State</button>
+              <button aria-pressed={tab === 'phasors'} onClick={() => setTab('phasors')}>Phasors</button>
               <button aria-pressed={tab === 'outcomes'} onClick={() => setTab('outcomes')}>Outcomes</button>
               <button aria-pressed={tab === 'noise'} onClick={() => setTab('noise')}>Real machine</button>
               <button aria-pressed={tab === 'table'} onClick={() => setTab('table')}>Table</button>
@@ -348,6 +350,19 @@ function BuildView({ circuit, setCircuit, state, error, diagnostics, step, setSt
                   })}
                 </div>
                 {tab === 'state' && <AmplitudeBars state={state} />}
+                {tab === 'phasors' && (
+                  state.size <= MAX_STATES_3D
+                    ? <AmplitudeField3D state={state} height={260} />
+                    : (
+                      <>
+                        <p className="tiny dim">
+                          {state.size} basis states is too many to read as arrows — beyond
+                          {' '}{MAX_STATES_3D} they are thinner than the lines. Here is the flat view instead.
+                        </p>
+                        <AmplitudeBars state={state} />
+                      </>
+                    )
+                )}
                 {tab === 'outcomes' && <Histogram state={state} shots={shots} />}
                 {tab === 'noise' && <NoiseLab circuit={circuit} shots={shots} />}
                 {tab === 'table' && <ProbabilityTable state={state} />}

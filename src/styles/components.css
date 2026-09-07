@@ -531,3 +531,8 @@
    style attribute so the renderer can read clientWidth/clientHeight. */
 .bloch-gl { display: block; border-radius: 50%; }
 .bloch-gl:active { cursor: grabbing; }
+
+/* ---------------------------------------------------------------- phasors */
+.ampfield { display: grid; gap: 8px; }
+.ampfield-gl { display: block; width: 100%; border-radius: var(--r-lg); }
+.ampfield-legend { margin: 0; line-height: 1.55; }
