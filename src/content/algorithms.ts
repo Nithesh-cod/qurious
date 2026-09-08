@@ -137,7 +137,7 @@ export const ALGORITHM_LESSONS: Lesson[] = [
         heading: 'Put the answer in the phase, not in a qubit',
         body:
           'Here is the trick, and it is worth slowing down for.\n\n' +
-          'Take an extra qubit and put it in the state ket 0 minus ket 1, over root two. You do that with an X followed by an H. Now flip that qubit with a CNOT. Something odd happens: the qubit that got flipped does not change at all, but the *control* qubit picks up a minus sign.\n\n' +
+          'Take an extra qubit and put it in the state ket 0 minus ket 1, over root two. You do that with an X followed by an H. Now flip that qubit with a CNOT. Something odd happens: the qubit that got flipped does not change at all, but the **control** qubit picks up a minus sign.\n\n' +
           'The answer has moved out of the extra qubit and into the phase of the input. That is called phase kickback, and it is the reason quantum algorithms work.',
         circuit: DJ_BALANCED,
         watch:
@@ -147,7 +147,7 @@ export const ALGORITHM_LESSONS: Lesson[] = [
         heading: 'Why phase is the right place to put it',
         body:
           'You cannot measure a phase. So why is it useful?\n\n' +
-          'Because phases interfere. Once the answer is written into the phases of a superposition, a Hadamard turns those phases back into probabilities — and if the algorithm arranged them well, the wrong answers cancel and the right one is left standing.\n\n' +
+          'Because phases interfere. Once the answer is written into the phases of a superposition, a Hadamard turns those phases back into probabilities. If the algorithm arranged them well, the wrong answers cancel and the right one is left standing.\n\n' +
           'Every algorithm in this module is a variation on that one idea: write the answer into phases, then interfere them into a result you can actually measure.',
       },
     ],
@@ -164,8 +164,8 @@ export const ALGORITHM_LESSONS: Lesson[] = [
         heading: 'The puzzle',
         body:
           'You are given a function that takes one bit and returns one bit. You are promised it is one of two kinds:\n\n' +
-          'Constant — it returns the same answer for both inputs.\n' +
-          'Balanced — it returns 0 for one input and 1 for the other.\n\n' +
+          '- **Constant** — it returns the same answer for both inputs.\n' +
+          '- **Balanced** — it returns 0 for one input and 1 for the other.\n\n' +
           'Which kind is it? Classically you must ask twice: once for input 0, once for input 1. One answer alone tells you nothing.\n\n' +
           'A quantum computer settles it in one question.',
       },

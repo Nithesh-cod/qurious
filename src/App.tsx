@@ -18,6 +18,7 @@ import {
   MODULES, earnedBadges, lessonsOf, moduleProgress, unmoduledLessons,
 } from './content/modules';
 import { AnimatedExplainer } from './ui/AnimatedExplainer';
+import { LessonBody } from './ui/LessonBody';
 import { NoiseLab } from './ui/NoiseLab';
 import { AmplitudeField3D, MAX_STATES_3D } from './ui/AmplitudeField3D';
 import { useSlideIn } from './ui/useSlideIn';
@@ -541,7 +542,7 @@ function LearnView({ lesson, setLesson, mastery, done, onDone, onTry, quizAnswer
           <article key={i} className="glass panel lesson-step rise">
             <div className="lesson-step-num num">{String(i + 1).padStart(2, '0')}</div>
             <h2>{s.heading}</h2>
-            <p>{s.body}</p>
+            <LessonBody text={s.body} />
             {s.animation && <AnimatedExplainer script={s.animation} />}
 
             {s.circuit && (

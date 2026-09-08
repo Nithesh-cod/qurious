@@ -536,3 +536,11 @@
 .ampfield { display: grid; gap: 8px; }
 .ampfield-gl { display: block; width: 100%; border-radius: var(--r-lg); }
 .ampfield-legend { margin: 0; line-height: 1.55; }
+
+/* Lesson prose. The grid gap on .lesson-step spaces paragraphs, so these only need to
+   set rhythm and the bullet treatment. */
+.lesson-body { display: grid; gap: 10px; }
+.lesson-body p { margin: 0; line-height: 1.62; }
+.lesson-bullets { margin: 0; padding-left: 18px; display: grid; gap: 6px; line-height: 1.55; }
+.lesson-bullets li::marker { color: var(--accent); }
+.lesson-body strong { color: var(--text-strong, inherit); font-weight: 650; }

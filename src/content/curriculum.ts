@@ -60,27 +60,28 @@ export const LESSONS: Lesson[] = [
       {
         heading: 'A qubit is a direction, not a number',
         body:
-          'A classical bit is 0 or 1. A qubit is a direction in a two-dimensional space, and we name the two reference directions |0⟩ and |1⟩. ' +
-          'That angle-bracket notation is called a ket, and it is just a label for "this particular state". ' +
-          'Every qubit here begins at |0⟩ and stays there until a gate moves it.',
+          'A classical bit is a switch. It is either 0 or 1, and there is nothing in between.\n\n' +
+          'A qubit is more like an arrow that can point anywhere on a sphere. We measure it against two opposite directions, and we call those |0⟩ and |1⟩. The angle brackets are called a **ket**, and they are just a label meaning "the state named 0".\n\n' +
+          'Every qubit in this app starts pointing at |0⟩ and stays there until a gate turns it.',
         circuit: circuit(1, 'A qubit at rest', []),
         watch: 'Probability of measuring 0 is 100%. The Bloch arrow points straight up.',
       },
       {
         heading: 'X is the quantum NOT',
         body:
-          'The X gate takes |0⟩ to |1⟩ and |1⟩ back to |0⟩. On its own that is exactly a classical NOT, which is worth noticing: ' +
-          'a great deal of quantum computing is ordinary logic, and only some of it is strange. ' +
-          'Apply X twice and you are back where you started.',
+          'The X gate swaps the two poles: |0⟩ becomes |1⟩, and |1⟩ becomes |0⟩.\n\n' +
+          'On its own that is exactly the classical NOT gate, and it is worth noticing early. A great deal of quantum computing is ordinary logic. Only some of it is strange.\n\n' +
+          'Apply X twice and you are back where you started — the arrow goes down, then straight back up.',
         circuit: circuit(1, 'Bit flip', [g('x', [0])]),
         watch: 'The arrow has swung to the south pole. 100% chance of measuring 1.',
       },
       {
         heading: 'Registers, and which end is which',
         body:
-          'Three qubits give eight basis states: |000⟩ through |111⟩. We write them with qubit 0 on the right, so |101⟩ means q2 = 1, q1 = 0, q0 = 1. ' +
-          'This is the same convention Qiskit uses, and getting it backwards is the single most common source of confusion when you move between tools. ' +
-          'The circuit below sets q0 and q2 — read the outcome and check it says 101.',
+          'Put three qubits side by side and you have a register. Three qubits have eight possible readings, |000⟩ through |111⟩.\n\n' +
+          'We write them with **qubit 0 on the right**, the same way the ones digit of an ordinary number goes last. So |101⟩ means q2 = 1, q1 = 0, q0 = 1.\n\n' +
+          'This is the convention Qiskit uses as well. Getting it backwards is the most common mistake people make when moving between quantum tools, so it is worth fixing in your head now rather than later.\n\n' +
+          'The circuit below flips q0 and q2. Read the outcome and check that it says 101.',
         circuit: circuit(3, 'Setting |101⟩', [g('x', [0]), g('x', [2])]),
         watch: 'One outcome at 100%: 101. Qubit 0 is the rightmost digit.',
         animation: {
@@ -97,9 +98,9 @@ export const LESSONS: Lesson[] = [
       {
         heading: 'Why 2ⁿ matters',
         body:
-          'Three qubits do not hold three numbers — they hold eight amplitudes, one for every basis state. Ten qubits hold 1,024. Twenty hold over a million. ' +
-          'That exponential growth is where the promise of quantum computing comes from, and also why this simulator stops at twelve qubits: ' +
-          'each extra qubit doubles the memory and the work. It is physics, not a limitation of the software.',
+          'Three qubits do not hold three numbers. They hold eight — one amplitude for every reading the register could give.\n\n' +
+          '- 3 qubits: 8 amplitudes\n- 10 qubits: 1,024\n- 20 qubits: over a million\n- 50 qubits: about 18 petabytes, at the 16 bytes a computer needs per amplitude\n\n' +
+          'That doubling is where the promise of quantum computing comes from. It is also why this simulator stops at twelve qubits: every extra qubit doubles both the memory and the work. That is physics, not a limitation of the app.',
       },
     ],
   },
@@ -115,9 +116,9 @@ export const LESSONS: Lesson[] = [
       {
         heading: 'The Hadamard tips a qubit onto the equator',
         body:
-          'Add a Hadamard to a fresh qubit. The arrow swings from the pole down to the equator, and the state becomes an even mixture of |0⟩ and |1⟩ — ' +
-          'written 0.707|0⟩ + 0.707|1⟩. Those numbers are amplitudes, not probabilities. Square them and you get the 50/50 you would expect. ' +
-          'This is superposition: not "we do not know which", but genuinely both directions at once.',
+          'Add a Hadamard — the H gate — to a fresh qubit. The arrow swings from the north pole down to the equator.\n\n' +
+          'The state is now written 0.707|0⟩ + 0.707|1⟩. Those numbers are **amplitudes**, not probabilities. Square them to get the probabilities: 0.707 squared is 0.5, so it is the 50/50 you would expect.\n\n' +
+          'Superposition does not mean "we do not know which one it is". It means the arrow is genuinely pointing somewhere that is neither.',
         circuit: circuit(1, 'Superposition', [g('h', [0])]),
         watch: 'The arrow lands on the equator. Two outcomes now appear, each at 50%.',
         animation: {
@@ -133,9 +134,9 @@ export const LESSONS: Lesson[] = [
       {
         heading: 'Two Hadamards undo each other',
         body:
-          'Here is the part that separates superposition from randomness. If a Hadamard just randomised the qubit, applying it twice would leave it random. ' +
-          'It does not — the second Hadamard brings the arrow back to the north pole exactly. A coin flipped twice is still random; a qubit rotated twice is back where it started. ' +
-          'The information was never lost, only turned sideways.',
+          'Here is what separates superposition from plain randomness.\n\n' +
+          'If a Hadamard simply scrambled the qubit, doing it twice would leave it scrambled. It does not. The second Hadamard brings the arrow back to the north pole exactly, every time.\n\n' +
+          'Flip a coin twice and it is still random. Rotate a qubit twice and it is back where it started. **Nothing was lost — the information was only turned sideways.**',
         circuit: circuit(1, 'There and back', [g('h', [0]), g('h', [0])]),
         watch: 'Back at 100% |0⟩. Delete one Hadamard and watch it return to 50/50.',
         animation: {
@@ -152,9 +153,9 @@ export const LESSONS: Lesson[] = [
       {
         heading: 'Scaling up',
         body:
-          'Put a Hadamard on every qubit of a three-qubit register and you get an even superposition over all eight basis states at once. ' +
-          'This is the standard opening move of almost every quantum algorithm. ' +
-          'The catch — and it is the whole difficulty of the field — is that measuring gives you back just one of those eight.',
+          'Put a Hadamard on every qubit of a three-qubit register and you have all eight readings at once, equally weighted. Three gates, eight amplitudes.\n\n' +
+          'This is the opening move of almost every quantum algorithm.\n\n' +
+          'Then comes the catch, and it is the whole difficulty of the field: measuring hands you back exactly one of those eight. Holding eight things at once is the easy part. Getting a useful answer out is the hard part.',
         circuit: circuit(3, 'Eight at once', [g('h', [0]), g('h', [1]), g('h', [2])]),
         watch: 'Eight outcomes, each at 12.5%. All three spheres on the equator.',
       },
@@ -172,36 +173,36 @@ export const LESSONS: Lesson[] = [
       {
         heading: 'Six landmarks',
         body:
-          'Any single qubit state is a point on the surface of a sphere. North is |0⟩ and south is |1⟩. ' +
-          'The equator holds the superpositions: +X is |+⟩ = 0.707|0⟩ + 0.707|1⟩, −X is |−⟩ with a minus sign, ' +
-          '+Y and −Y are the same mixture with an imaginary phase. Everything a single qubit can be is somewhere on this surface.',
+          'Everything a single qubit can be is a point on the surface of one sphere. Learn six places on it and you can read most states at a glance.\n\n' +
+          '- North pole: |0⟩\n- South pole: |1⟩\n- +X: |+⟩, the even mix a Hadamard makes\n- −X: |−⟩, the same mix with a minus sign\n- +Y and −Y: that mix again, turned a quarter turn in phase\n\n' +
+          'Everything else is somewhere in between. The x, y and z numbers under the sphere are the coordinates of that point.',
         circuit: circuit(1, 'On the +X axis', [g('h', [0])]),
         watch: 'Read the x, y, z numbers under the sphere: x = 1.00, y = 0.00, z = 0.00.',
       },
       {
         heading: 'S rotates a quarter turn around the vertical',
         body:
-          'Start at +X with a Hadamard, then apply S. The arrow swings a quarter turn around the vertical axis and lands on +Y. ' +
-          'The probabilities have not changed at all — still 50/50 — because spinning around the vertical axis never changes height. ' +
-          'This is your first sight of phase: a real, physical change that measurement alone cannot see.',
+          'Start with a Hadamard, which puts the arrow on +X. Now add S.\n\n' +
+          'The arrow swings a quarter turn around the vertical axis and lands on +Y. The probabilities do not change at all — still 50/50 — because spinning around the vertical never changes how high the arrow sits.\n\n' +
+          'This is your first sight of **phase**: a real, physical change that measurement on its own cannot see.',
         circuit: circuit(1, 'Quarter turn to +Y', [g('h', [0]), g('s', [0])]),
         watch: 'y = 1.00 now, and z is still 0. The outcome probabilities are unchanged at 50/50.',
       },
       {
         heading: 'Rotations let you land anywhere',
         body:
-          'RX, RY and RZ rotate by any angle you like about the three axes. Select the RY gate below and drag its angle slider — ' +
-          'the arrow sweeps continuously from the north pole down to the south pole, and the measurement probabilities follow it smoothly. ' +
-          'A quantum gate is not a table of outputs; it is a rotation.',
+          'X, H and S are fixed turns. RX, RY and RZ turn by whatever angle you ask for.\n\n' +
+          'Click the RY gate below and drag its angle slider. The arrow sweeps smoothly from the north pole all the way down to the south, and the measurement probabilities follow it the whole way.\n\n' +
+          'That is the mental model worth keeping: **a quantum gate is not a lookup table, it is a rotation.**',
         circuit: circuit(1, 'Adjustable rotation', [g('ry', [0], [Math.PI / 3])]),
         watch: 'Click the RY gate, then drag the angle. Watch the arrow and the probabilities move together.',
       },
       {
         heading: 'Where the sphere stops working',
         body:
-          'The Bloch sphere describes one qubit perfectly and two qubits not at all. Once qubits are entangled, neither has a state of its own to draw, ' +
-          'and the arrow collapses to a dot at the centre. That is not a failure of the picture — it is the picture telling you the truth: ' +
-          'the information has moved out of the individual qubits and into the relationship between them.',
+          'The Bloch sphere describes one qubit perfectly and two qubits not at all.\n\n' +
+          'Run the circuit below and both arrows disappear, leaving a dot at the centre of each sphere. That is not the app giving up. It is the picture telling you the truth: once two qubits are entangled, neither one has a state of its own left to draw.\n\n' +
+          'The information has moved out of the individual qubits and into the relationship between them. The entanglement lesson picks this up.',
         circuit: circuit(2, 'The sphere gives up', [g('h', [0]), g('cx', [0, 1])]),
         watch: 'Both arrows vanish and an amber dot appears at each centre. |r| reads 0.00.',
       },
@@ -219,9 +220,9 @@ export const LESSONS: Lesson[] = [
       {
         heading: 'Two states, identical outcomes',
         body:
-          'Build |+⟩ with a Hadamard and note the outcomes: 50/50. Now add a Z gate. Run it again — still 50/50, exactly. ' +
-          'Nothing you can measure has changed. But the state is genuinely different: it is now 0.707|0⟩ − 0.707|1⟩, with a minus sign on the second term. ' +
-          'Watch the colour of the amplitude bars instead of their length; the colour is the phase.',
+          'Build |+⟩ with a Hadamard and look at the outcomes: 50/50.\n\n' +
+          'Now add a Z gate and run it again. Still 50/50 — exactly, not approximately. Nothing you can measure has changed.\n\n' +
+          'But the state genuinely is different. It is now 0.707|0⟩ − 0.707|1⟩, with a minus sign on the second term. **Watch the colour of the amplitude bars rather than their length. The colour is the phase.**',
         circuit: circuit(1, 'Phase flipped', [g('h', [0]), g('z', [0])]),
         watch: 'Probabilities identical to a plain H. The |1⟩ bar has changed colour, and x now reads −1.00.',
         animation: {
@@ -238,18 +239,19 @@ export const LESSONS: Lesson[] = [
       {
         heading: 'The phase gates are just smaller turns',
         body:
-          'Z is a half turn about the vertical axis. S is a quarter turn, T is an eighth. They form a family, and the notation reflects it: ' +
-          'two S gates make a Z, and two T gates make an S. The dagger versions (S†, T†) turn the other way. ' +
-          'Try stacking two T gates and compare the result to a single S.',
+          'Z, S and T are the same move at three sizes, all of them turns about the vertical axis.\n\n' +
+          '- Z is a half turn\n- S is a quarter turn\n- T is an eighth of a turn\n\n' +
+          'So two T gates make an S, and two S gates make a Z. The dagger versions, S† and T†, turn the other way.\n\n' +
+          'Stack two T gates below, then compare the x, y and z numbers with a circuit that uses H then S. They match.',
         circuit: circuit(1, 'Two T gates', [g('h', [0]), g('t', [0]), g('t', [0])]),
         watch: 'Compare y and z with a circuit using H then S. They match.',
       },
       {
         heading: 'Phase becomes visible when it interferes',
         body:
-          'A phase you cannot measure sounds useless. It is not — it becomes measurable the moment you bring the paths back together. ' +
-          'Hadamard, then Z, then Hadamard again turns |0⟩ into |1⟩ with certainty. The middle Z did nothing observable on its own, ' +
-          'yet it completely changed the final answer. That is the whole mechanism of quantum computing in three gates.',
+          'A change you cannot measure sounds useless. It is not. It becomes measurable the moment you bring the paths back together.\n\n' +
+          'Hadamard, then Z, then Hadamard turns |0⟩ into |1⟩ with certainty. The Z in the middle did nothing observable on its own, yet it completely changed the final answer.\n\n' +
+          'That is the whole mechanism of quantum computing, in three gates.',
         circuit: circuit(1, 'H, Z, H equals X', [g('h', [0]), g('z', [0]), g('h', [0])]),
         watch: '100% chance of measuring 1. Remove the Z and it becomes 100% zero instead.',
         animation: {
@@ -278,9 +280,9 @@ export const LESSONS: Lesson[] = [
       {
         heading: 'Square the amplitude',
         body:
-          'The probability of an outcome is the square of the magnitude of its amplitude — the Born rule. ' +
-          'An amplitude of 0.707 gives a probability of 0.5. An amplitude of −0.707 gives the same 0.5, because squaring removes the sign. ' +
-          'That is precisely why phase is invisible to a single measurement.',
+          'Measurement has one rule, called the **Born rule**: the chance of an outcome is the square of the size of its amplitude.\n\n' +
+          'An amplitude of 0.707 gives a probability of 0.5. An amplitude of −0.707 gives the same 0.5, because squaring throws the minus sign away.\n\n' +
+          'That is exactly why phase is invisible to a single measurement — and exactly why an algorithm has to do something with the phase before it measures.',
         circuit: circuit(2, 'Unequal amplitudes', [g('ry', [0], [Math.PI / 3])]),
         watch: 'Switch to the Table tab: the probability column is the amplitude column squared.',
         animation: {
@@ -301,18 +303,18 @@ export const LESSONS: Lesson[] = [
       {
         heading: 'One shot tells you almost nothing',
         body:
-          'A real quantum computer gives you one bitstring per run. From a single shot of a superposition you cannot tell what the state was. ' +
-          'You run it thousands of times and look at the distribution. Open the Outcomes tab and drag the shots slider down to 64 — the histogram gets noisy and unreliable. ' +
-          'Drag it up to 8,192 and the true shape appears. This is the actual daily experience of quantum programming.',
+          'A real quantum computer hands you one bitstring per run. A single shot of a superposition tells you almost nothing about the state it came from.\n\n' +
+          'So you run the circuit thousands of times and look at the shape of the results.\n\n' +
+          'Open the Outcomes tab and drag the shots slider down to 64: the histogram comes out lumpy and misleading. Drag it up to 8,192 and the true shape appears. This is the actual daily experience of quantum programming.',
         circuit: circuit(2, 'Sampling noise', [g('h', [0]), g('cx', [0, 1])]),
         watch: 'Outcomes tab. At 64 shots the split is visibly uneven; at 8,192 it is close to 50/50.',
       },
       {
         heading: 'Measuring ends the superposition',
         body:
-          'Measurement is not a passive read. It forces the qubit to one of the basis states and discards everything else. ' +
-          'The circuit below measures qubit 0 and then applies a Hadamard to it — the tutor will warn you, because that Hadamard is acting on a collapsed, ordinary bit. ' +
-          'Put your measurements at the end unless you specifically intend otherwise.',
+          'Measurement is not a passive read. It forces the qubit onto one of the two poles and discards everything else. There is no undo.\n\n' +
+          'The circuit below measures qubit 0 and **then** applies a Hadamard to it. The tutor will warn you about that, because by then the qubit is an ordinary classical bit and the Hadamard is wasted.\n\n' +
+          'Put your measurements at the end, unless you have a specific reason not to.',
         circuit: circuit(1, 'Measuring too early', [g('h', [0]), g('measure', [0]), g('h', [0])]),
         watch: 'The tutor flags a gate acting on an already-measured qubit.',
       },
@@ -330,17 +332,18 @@ export const LESSONS: Lesson[] = [
       {
         heading: 'CNOT: flip if the control is 1',
         body:
-          'The CNOT gate has a control qubit and a target. If the control is |1⟩, the target flips. If the control is |0⟩, nothing happens. ' +
-          'On its own that is a perfectly ordinary classical operation — this circuit does nothing at all, because the control is |0⟩.',
+          'CNOT is a conditional flip. It has a **control** qubit and a **target**: when the control is |1⟩ the target flips, and when the control is |0⟩ nothing happens at all.\n\n' +
+          'That is a perfectly ordinary classical operation, and on its own it does nothing interesting.\n\n' +
+          'The circuit below is a bare CNOT with the control still sitting at |0⟩, so the register never moves.',
         circuit: circuit(2, 'A CNOT doing nothing', [g('cx', [0, 1])]),
         watch: 'Both qubits still at |00⟩. The tutor will point out that this CNOT cannot entangle anything.',
       },
       {
         heading: 'Put the control in superposition first',
         body:
-          'Now put a Hadamard on the control before the CNOT. The control is both |0⟩ and |1⟩, so the CNOT both flips and does not flip the target. ' +
-          'The result is 0.707|00⟩ + 0.707|11⟩ — a Bell state. Notice what is missing: |01⟩ and |10⟩ never occur. ' +
-          'The two qubits always agree, even though neither has decided anything yet.',
+          'Now put a Hadamard on the control first.\n\n' +
+          'The control is both |0⟩ and |1⟩ at once, so the CNOT both flips the target and does not flip it. The result is 0.707|00⟩ + 0.707|11⟩, called a **Bell state**.\n\n' +
+          'Look at what is missing. |01⟩ and |10⟩ never appear. The two qubits always agree, even though neither one has settled on an answer yet — and measuring either one tells you the other immediately.',
         circuit: circuit(2, 'Bell state', [g('h', [0]), g('cx', [0, 1])]),
         watch: 'Only 00 and 11 appear, at 50% each. Both Bloch arrows have collapsed to the centre.',
         animation: {
@@ -357,26 +360,27 @@ export const LESSONS: Lesson[] = [
       {
         heading: 'Why the spheres went empty',
         body:
-          'The arrows are gone, replaced by a dot at the centre. That is not a rendering bug, it is the point. ' +
-          'An entangled qubit has no state of its own to draw. All the information lives in the pair. ' +
-          'Ask "what is qubit 0 doing?" and there is genuinely no answer — only "qubit 0 and qubit 1 agree".',
+          'The arrows are gone and there is a dot at the centre instead. That is the point, not a bug.\n\n' +
+          'An entangled qubit has no state of its own to draw. All of the information lives in the pair.\n\n' +
+          'Ask "what is qubit 0 doing?" and there is genuinely no answer. The only true statement left is "qubit 0 and qubit 1 agree".',
         circuit: circuit(2, 'Bell state', [g('h', [0]), g('cx', [0, 1])]),
         watch: 'The vector length |r| reads 0.00. For a pure unentangled qubit it reads 1.00.',
       },
       {
         heading: 'The other three Bell states',
         body:
-          'There are four maximally entangled two-qubit states. Add a Z after the Hadamard and the two terms pick up opposite signs. ' +
-          'Add an X instead and the qubits always disagree rather than agree. All four are equally entangled — they differ only in phase and parity, ' +
-          'and telling them apart is exactly what superdense coding exploits.',
+          'There are four maximally entangled two-qubit states, and a single gate takes you between them.\n\n' +
+          'Add a Z after the Hadamard and the two terms end up with opposite signs. Add an X instead and the qubits always disagree rather than agree.\n\n' +
+          'All four are equally entangled. They differ only in phase and in whether the qubits match — and telling them apart is exactly what superdense coding puts to work.',
         circuit: circuit(2, 'Bell Φ−', [g('h', [0]), g('cx', [0, 1]), g('z', [0])]),
         watch: 'Still only 00 and 11 at 50/50, but the |11⟩ amplitude bar has flipped colour.',
       },
       {
         heading: 'GHZ: entangling three',
         body:
-          'One Hadamard and two CNOTs entangle three qubits so all three always agree — 0.707|000⟩ + 0.707|111⟩. ' +
-          'This generalises: one Hadamard plus a CNOT to every other qubit. Try adding a fourth qubit and a third CNOT yourself.',
+          'One Hadamard and two CNOTs entangle three qubits so that all three always agree: 0.707|000⟩ + 0.707|111⟩.\n\n' +
+          'The pattern generalises — one Hadamard, then a CNOT out to every other qubit.\n\n' +
+          'Open this in the builder, add a fourth qubit and a third CNOT, and check that only 0000 and 1111 survive.',
         circuit: circuit(3, 'GHZ', [g('h', [0]), g('cx', [0, 1]), g('cx', [0, 2])]),
         watch: 'Only 000 and 111. All three spheres empty.',
         animation: {
@@ -405,8 +409,9 @@ export const LESSONS: Lesson[] = [
       {
         heading: 'Amplitudes can be negative. Probabilities cannot.',
         body:
-          'This is the whole trick. If two paths lead to the same outcome and one has amplitude +0.5 while the other has −0.5, they add to zero and the outcome never happens. ' +
-          'Classical probabilities can only ever pile up; quantum amplitudes can cancel. Everything quantum computers do faster, they do by arranging cancellation.',
+          'This is the whole trick, and it fits in one sentence: **amplitudes can be negative, and probabilities cannot.**\n\n' +
+          'If two paths lead to the same outcome, one carrying +0.5 and the other −0.5, they add to zero and that outcome simply never happens.\n\n' +
+          'Classical probabilities can only ever pile up. Quantum amplitudes can cancel. Everything a quantum computer does faster, it does by arranging for the wrong answers to cancel.',
         circuit: circuit(1, 'Cancelling to certainty', [g('h', [0]), g('z', [0]), g('h', [0])]),
         watch: 'One outcome at 100%. The |0⟩ path cancelled itself out completely.',
         animation: {
@@ -424,9 +429,11 @@ export const LESSONS: Lesson[] = [
       {
         heading: 'Deutsch–Jozsa: one query instead of two',
         body:
-          'Here is the smallest problem where quantum wins. You are given a function on one bit and told it is either constant (same output for both inputs) or balanced (different). ' +
-          'Classically you must check both inputs. Quantum mechanically you check once. ' +
-          'The circuit below uses a CNOT as a balanced oracle — and qubit 0 comes out reading 1 with certainty.',
+          'Here is the smallest problem where quantum genuinely wins.\n\n' +
+          'You are handed a function that takes one bit and returns one bit, and you are promised it is one of two kinds:\n\n' +
+          '- **Constant** — the same answer for both inputs\n- **Balanced** — a different answer for each input\n\n' +
+          'Classically you have to test both inputs. There is no way around it, because one answer on its own tells you nothing.\n\n' +
+          'The circuit below tests it once. Qubit 0 comes out reading 1 with certainty, and that single bit is the entire verdict: balanced.',
         circuit: circuit(2, 'Deutsch–Jozsa, balanced', [
           g('x', [1]), g('h', [1]), g('h', [0]), g('cx', [0, 1]), g('h', [0]),
         ]),
@@ -435,9 +442,9 @@ export const LESSONS: Lesson[] = [
       {
         heading: 'Now make the oracle constant',
         body:
-          'Delete the CNOT — that turns the oracle into "do nothing", which is a constant function. ' +
-          'Run it again and qubit 0 now reads 0 with certainty. One run of the circuit distinguishes the two cases, ' +
-          'where a classical algorithm needs two. The speed-up is small here, but the same idea scales to an exponential gap on larger inputs.',
+          'Delete the CNOT. That turns the oracle into "do nothing", which is a constant function.\n\n' +
+          'Run it again and qubit 0 now reads 0 with certainty. One gate changed, and the answer flipped.\n\n' +
+          'The gap here is small — one question instead of two. What made this result matter is that the same idea scales to an exponential gap on larger inputs.',
         circuit: circuit(2, 'Deutsch–Jozsa, constant', [
           g('x', [1]), g('h', [1]), g('h', [0]), g('h', [0]),
         ]),
@@ -446,9 +453,9 @@ export const LESSONS: Lesson[] = [
       {
         heading: 'The pattern to remember',
         body:
-          'Almost every quantum algorithm has the same three-part shape. Spread into superposition with Hadamards. ' +
-          'Do something that writes the answer into the phases. Then interfere the paths back together so the wrong answers cancel and the right one survives. ' +
-          'Grover, Deutsch–Jozsa and Shor are all variations on that skeleton.',
+          'Almost every quantum algorithm has the same three-part shape.\n\n' +
+          '- Spread into superposition, usually with Hadamards\n- Do something that writes the answer into the phases\n- Interfere the paths back together, so the wrong answers cancel\n\n' +
+          'Grover, Deutsch–Jozsa and Shor are all variations on that skeleton. Once you can pick out those three parts, an unfamiliar algorithm stops being a wall of gates.',
       },
     ],
   },
@@ -464,26 +471,27 @@ export const LESSONS: Lesson[] = [
       {
         heading: 'Start with everything equally likely',
         body:
-          'Grover searches an unstructured list. Two qubits give four entries — 00, 01, 10, 11 — and we begin with all four equally likely. ' +
-          'Suppose the answer is 11. Right now we would find it one time in four, which is exactly what guessing gives.',
+          'Grover searches a list with no structure to it. No sorting, no index, nothing to exploit — you can only check entries one at a time.\n\n' +
+          'Two qubits give four entries: 00, 01, 10 and 11. We start with all four equally likely.\n\n' +
+          'Say the answer is 11. Right now we would find it one time in four, which is exactly what guessing gets you.',
         circuit: circuit(2, 'Four candidates', [g('h', [0]), g('h', [1])]),
         watch: 'Four outcomes at 25% each.',
       },
       {
         heading: 'The oracle marks the answer with a phase',
         body:
-          'Add a CZ. It flips the sign of the |11⟩ amplitude and leaves the other three alone. ' +
-          'Run it and look at the probabilities — unchanged, still 25% each. ' +
-          'The oracle has marked the answer, but the mark lives in the phase where measurement cannot reach it. Watch the colour of the |11⟩ bar instead.',
+          'Add a CZ gate. It flips the sign of the |11⟩ amplitude and leaves the other three untouched.\n\n' +
+          'Run it and look at the probabilities: still 25% each. Nothing has changed that you could measure.\n\n' +
+          'The answer has been marked, but the mark is hiding in the phase. Watch the **colour** of the |11⟩ bar rather than its height.',
         circuit: circuit(2, 'Oracle applied', [g('h', [0]), g('h', [1]), g('cz', [0, 1])]),
         watch: 'Probabilities unchanged at 25%. The |11⟩ amplitude bar has changed colour.',
       },
       {
         heading: 'The diffuser turns phase into probability',
         body:
-          'The second half — H, X, CZ, X, H on both qubits — reflects every amplitude about their average. ' +
-          'The three unmarked amplitudes shrink to nothing and the marked one grows to 1. Run it: |11⟩ now comes up 100% of the time. ' +
-          'Nothing was searched; the wrong answers cancelled themselves out.',
+          'The second half — H, X, CZ, X, H on both qubits — is called the diffuser. It reflects every amplitude about their average.\n\n' +
+          'The marked amplitude was the only one below the average, so reflecting sends it well above. The three unmarked ones shrink to nothing and |11⟩ grows to certainty.\n\n' +
+          'Run it: |11⟩ now comes up 100% of the time. Nothing was searched. The wrong answers cancelled themselves out.',
         circuit: circuit(2, 'Grover, one iteration', [
           g('h', [0]), g('h', [1]), g('cz', [0, 1]),
           g('h', [0]), g('h', [1]), g('x', [0]), g('x', [1]),
@@ -510,9 +518,9 @@ export const LESSONS: Lesson[] = [
       {
         heading: 'Why this matters, and what it is not',
         body:
-          'Classically, finding one entry among N takes about N/2 guesses. Grover takes about √N. For four entries that is one step instead of two — unimpressive. ' +
-          'For a million entries it is a thousand steps instead of five hundred thousand. ' +
-          'It is a quadratic speed-up, not an exponential one, and knowing that distinction is worth more than being able to recite the circuit.',
+          'Classically, finding one entry among N takes about N/2 guesses. Grover takes about the square root of N.\n\n' +
+          'For four entries that is one step instead of two, which is unimpressive. For a million entries it is a thousand steps instead of five hundred thousand.\n\n' +
+          'It is a **quadratic** speed-up, not an exponential one. Knowing that difference is worth more than being able to recite the circuit — it is also the thing people most often get wrong about quantum computing.',
       },
     ],
   },
