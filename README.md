@@ -27,8 +27,9 @@ follows. Both write the same object, so they cannot drift apart.
 
 **A tutor that checks itself.** It proposes an answer, runs it on the simulator, and throws
 the answer away if the output disagrees with the claim. With no network it answers from
-105 written topics; with a language model configured it can go wider, and always labels
-which source produced the answer.
+1,090 topics: 193 written by hand, and 897 that it computes on the spot by running the
+circuit in question, so they cannot contradict the simulator. It labels which of the
+three — written, computed, or a configured language model — produced the answer.
 
 **The Noise Lab.** Run your circuit the way a real machine would — depolarising Pauli
 errors, amplitude damping, dephasing and readout flips, as Monte Carlo trajectories.
@@ -64,7 +65,7 @@ its bit ordering is confirmed against Qiskit rather than against our own engine,
 a shared misunderstanding between simulator and test would otherwise go unnoticed.
 
 ```bash
-npx vitest run                    # 194 tests
+npx vitest run                    # 312 tests
 python server/crosscheck.py       # the Qiskit comparison (needs qiskit + qiskit-aer)
 python server/qpe_crosscheck.py   # phase estimation, verified independently
 ```
@@ -105,7 +106,7 @@ key baked in at build time would ship inside the bundle for anyone to read.
 src/core/      simulator, circuit IR, transpilers, noise, grading, knowledge base, tutor
 src/ui/        canvas, code panel, state views, Noise Lab, 3D avatar
 src/content/   lessons, challenges, quizzes — data, not code
-tests/         194 tests: physics, content claims, prose readability, and the Qiskit cross-check fixtures
+tests/         312 tests: physics, content claims, prose readability, and the Qiskit cross-check fixtures
 server/        optional FastAPI service and the Qiskit comparison script
 scripts/       APK build and Android branding generation
 docs/          the SIH submission deck and the competitive comparison

@@ -249,9 +249,23 @@
   border-radius: var(--r-xl) var(--r-xl) 0 0;
   border-bottom: 0; border-left: 0; border-right: 0;
   padding: 8px 14px calc(14px + env(safe-area-inset-bottom));
-  display: grid; grid-template-rows: auto auto minmax(0, 1fr);
+  /*
+   * Column flex rather than a row template.
+   *
+   * This was `grid-template-rows: auto auto minmax(0, 1fr)` — three tracks. The build
+   * and settings sheets have exactly three children so it worked; the tutor sheet has
+   * four, because it carries an ask box above the scrolling body. The flexible track
+   * therefore landed on the ask box and squashed it to under a pixel, while the body
+   * took an implicit auto row and the input and Ask button spilled out over it.
+   *
+   * Flex says what was actually meant — everything sizes to its content, the body takes
+   * what is left — and it stays right whatever a sheet chooses to put in itself.
+   */
+  display: flex; flex-direction: column;
   gap: 8px;
 }
+.sheet > * { flex: 0 0 auto; }
+.sheet > .sheet-body { flex: 1 1 auto; }
 
 /*
  * Motion is a transition, not a keyframe animation with `fill-mode: both`.

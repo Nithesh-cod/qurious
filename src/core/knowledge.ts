@@ -13,6 +13,9 @@
  * run instantly on a mid-range phone with no model download.
  */
 
+import { DERIVED_ENTRIES } from './knowledgeDerived';
+import { EXTRA_ENTRIES } from './knowledgeExtra';
+
 export type Category =
   | 'basics' | 'gates' | 'algorithms' | 'maths' | 'hardware'
   | 'errors' | 'applications' | 'india' | 'app' | 'study';
@@ -40,9 +43,16 @@ export interface Entry {
   keys: string[];
   body: string;
   related?: string[];
+  /**
+   * True when the body is produced by running the circuit on the simulator rather than
+   * being written by hand. See knowledgeDerived.ts. Reading it may run a simulation, so
+   * nothing should touch it speculatively.
+   */
+  computed?: boolean;
 }
 
-export const ENTRIES: Entry[] = [
+/** The first batch of hand-written entries. The rest are in knowledgeExtra.ts. */
+const BASE_ENTRIES: Entry[] = [
   // ================================================================ basics
   {
     id: 'qubit', category: 'basics', concept: 'qubit', title: 'What is a qubit?',
@@ -692,6 +702,21 @@ export const ENTRIES: Entry[] = [
   },
 ];
 
+/**
+ * Everything the tutor knows offline: the curated entries above, plus the ones the
+ * simulator works out on demand.
+ *
+ * The two halves answer different kinds of question. A person writes "what is
+ * entanglement" — that needs judgement about what to say and what to leave out, and no
+ * generator can supply it. A person also asks "what does T do to the plus state", and
+ * that has one right answer which the simulator already knows; writing it out by hand
+ * would only be a chance to get it wrong.
+ */
+/** Everything a person wrote and checked, across both files. */
+export const CURATED_ENTRIES: Entry[] = [...BASE_ENTRIES, ...EXTRA_ENTRIES];
+
+export const ENTRIES: Entry[] = [...CURATED_ENTRIES, ...DERIVED_ENTRIES];
+
 export interface Match {
   entry: Entry;
   score: number;
@@ -719,13 +744,44 @@ function contentWords(s: string): string[] {
  * confidently answered a question nobody asked. Word-boundary matching is the fix, and
  * the test suite pins it.
  */
-interface Indexed { entry: Entry; titleKeys: Set<string>; body: Set<string> }
+interface Indexed {
+  entry: Entry;
+  titleKeys: Set<string>;
+  body: Set<string>;
+  /** Multi-word keys, pre-tokenised and space-padded, ready to test with `includes`. */
+  phrases: string[];
+  /** Single-word keys, which score on an exact word match instead. */
+  singles: string[];
+}
 
-const INDEX: Indexed[] = ENTRIES.map(entry => ({
-  entry,
-  titleKeys: new Set([...words(entry.title), ...entry.keys.flatMap(words)]),
-  body: new Set(contentWords(entry.body)),
-}));
+/**
+ * Computed entries are indexed on their title and keys only.
+ *
+ * Two reasons, and both matter. Reading a computed body runs a simulation, so indexing
+ * one at import would turn a cheap module load into several hundred circuit runs on the
+ * phone's main thread. And their bodies are mostly numbers — indexing "0.707" and
+ * "percent" across nine hundred entries would add noise to retrieval, not signal.
+ */
+const NO_BODY: Set<string> = new Set();
+
+const INDEX: Indexed[] = ENTRIES.map(entry => {
+  const phrases: string[] = [];
+  const singles: string[] = [];
+  const keyWords: string[] = [];
+  for (const key of entry.keys) {
+    const kw = words(key);
+    keyWords.push(...kw);
+    if (kw.length > 1) phrases.push(' ' + kw.join(' ') + ' ');
+    else if (kw.length === 1) singles.push(kw[0]);
+  }
+  return {
+    entry,
+    titleKeys: new Set([...words(entry.title), ...keyWords]),
+    body: entry.computed ? NO_BODY : new Set(contentWords(entry.body)),
+    phrases,
+    singles,
+  };
+});
 
 /**
  * Loose match so "entangle" finds "entangled" and "shors" finds "shor".
@@ -751,18 +807,14 @@ export function search(question: string, limit = 3): Match[] {
   const asked = contentWords(question);
   if (!asked.length) return [];
 
-  const scored = INDEX.map(({ entry, titleKeys, body }) => {
+  const askedSet = new Set(asked);
+
+  const scored = INDEX.map(({ entry, titleKeys, body, phrases, singles }) => {
     let score = 0;
 
-    for (const key of entry.keys) {
-      const kw = words(key);
-      if (kw.length > 1) {
-        // A whole key phrase present in the question is the strongest signal there is.
-        if (q.includes(' ' + kw.join(' ') + ' ')) score += 7;
-      } else if (titleKeysHasExact(kw[0], asked)) {
-        score += 4;
-      }
-    }
+    // A whole key phrase present in the question is the strongest signal there is.
+    for (const p of phrases) if (q.includes(p)) score += 7;
+    for (const s of singles) if (askedSet.has(s)) score += 4;
 
     for (const w of asked) {
       if (titleKeys.has(w)) score += 2.5;
@@ -770,14 +822,14 @@ export function search(question: string, limit = 3): Match[] {
       else if (w.length >= 5 && body.has(w)) score += 0.5;
     }
 
-    return { entry, score };
+    // A written explanation beats a computed one when both fit the question equally well.
+    // Somebody asking "what does the Hadamard gate do" wants the concept, not the Bloch
+    // coordinates of one particular case — and the general answer is the better place to
+    // start from either way.
+    return { entry, score: entry.computed ? score * 0.9 : score };
   });
 
   return scored.filter(m => m.score >= MIN_SCORE).sort((a, b) => b.score - a.score).slice(0, limit);
-}
-
-function titleKeysHasExact(key: string, asked: string[]): boolean {
-  return asked.includes(key);
 }
 
 // ---------------------------------------------------------------- small talk
@@ -813,8 +865,11 @@ export function smallTalk(question: string): string | null {
   return null;
 }
 
+/** Indexed rather than scanned: with a thousand entries this is called in loops. */
+const BY_ID = new Map(ENTRIES.map(e => [e.id, e]));
+
 export function byId(id: string): Entry | undefined {
-  return ENTRIES.find(e => e.id === id);
+  return BY_ID.get(id);
 }
 
 /** Entries tied to a learning concept, for the avatar's contextual suggestions. */

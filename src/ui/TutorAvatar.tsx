@@ -37,6 +37,15 @@ interface Answer {
   text: string;
   source: 'knowledge' | 'model' | 'none';
   entry?: Entry;
+  /**
+   * The runners-up from the same search.
+   *
+   * With a thousand topics in the base, a question can legitimately match a general
+   * explanation and a specific computed answer at nearly the same score, and only one of
+   * them can be first. Offering the rest costs a line and means a good answer is never
+   * more than one tap away because a tie went the other way.
+   */
+  alternatives?: Entry[];
   ms?: number;
 }
 
@@ -117,7 +126,10 @@ export function TutorAvatar({ mood, llm, lang, onLangChange, contextHint }: {
     const hits = searchKnowledge(trimmed);
     if (hits.length) {
       const entry = hits[0].entry;
-      const a: Answer = { question: trimmed, text: entry.body, source: 'knowledge', entry };
+      const a: Answer = {
+        question: trimmed, text: entry.body, source: 'knowledge', entry,
+        alternatives: hits.slice(1).map(h => h.entry),
+      };
       setAnswer(a);
       setBusy(false);
       await say(entry.body);
@@ -372,8 +384,12 @@ export function TutorAvatar({ mood, llm, lang, onLangChange, contextHint }: {
               {answer && (
                 <article className="tutor-answer rise">
                   <div className="tutor-answer-head">
+                    {/* Say where the answer came from. A computed one was produced by
+                        running the circuit just now, which is a stronger guarantee than
+                        "somebody wrote this down once" — so it is worth naming. */}
                     <span className={`chip tiny ${answer.source === 'knowledge' ? 'chip-mint' : answer.source === 'model' ? 'chip-accent' : 'chip-amber'}`}>
-                      {answer.source === 'knowledge' ? 'built-in knowledge'
+                      {answer.source === 'knowledge'
+                        ? (answer.entry?.computed ? 'computed on the simulator' : 'built-in knowledge')
                         : answer.source === 'model' ? `language model${answer.ms ? ` · ${answer.ms} ms` : ''}`
                         : 'not in my knowledge'}
                     </span>
@@ -383,6 +399,17 @@ export function TutorAvatar({ mood, llm, lang, onLangChange, contextHint }: {
                   </div>
                   {answer.entry && <h4>{answer.entry.title}</h4>}
                   <p>{answer.text}</p>
+
+                  {!!answer.alternatives?.length && (
+                    <div className="tutor-suggestions">
+                      <span className="tiny dim">Or did you mean:</span>
+                      {answer.alternatives.map(e => (
+                        <button key={e.id} className="chip" onClick={() => { setQuestion(e.title); answerQuestion(e.title); }}>
+                          {e.title}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   {relatedChips.length > 0 && (
                     <div className="tutor-suggestions">
