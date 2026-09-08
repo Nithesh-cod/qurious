@@ -5,7 +5,7 @@ falls back to a procedural orb, so nothing here is required to run.
 
 ## What is here
 
-    tutor.glb            the character, rigged, T-pose, no animation (4.3 MB)
+    tutor.glb            the character, rigged, T-pose, no animation (2.0 MB)
     anim/idle.json       animation clips, one per avatar state
     anim/talk.json
     anim/think.json
@@ -39,10 +39,16 @@ auto-normalised to 2.4 units tall with its feet at y = −1.2 so the rings orbit
 torso. It should face +Z (toward the viewer); if it ends up facing away, add
 `model.rotation.y = Math.PI` in `src/ui/Avatar3D.tsx`.
 
-Keep it as small as you can — this ships inside the APK. The current one is 4.3 MB, of
-which 2.8 MB is textures and a single 1024 by 1024 PNG is 1.2 MB of that. The avatar
-draws at 92 pixels, so anything above roughly 512 by 512 is detail nobody can see and
-download size everybody pays for.
+Do not copy the export straight in. Run:
+
+    python scripts/shrink-avatar-textures.py
+
+It reads avatar/model.glb and writes public/avatar/tutor.glb with every texture resized
+to what a 92 pixel avatar can actually show. On the current character that is 4.30 MB
+down to 2.04 MB, almost all of it from one 1024 by 1024 hair texture. Measured at the
+size the avatar is drawn, the worst texture loses 33 dB and most lose over 40, which is
+below what anyone can see. The source model is never modified, so it is always
+re-runnable and always reversible.
 
 After replacing the character, run the tests. tests/avatar-rig.test.ts checks that every
 track in every clip names a bone the new model actually has. That is the failure worth
