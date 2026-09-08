@@ -5,7 +5,7 @@ falls back to a procedural orb, so nothing here is required to run.
 
 ## What is here
 
-    tutor.glb            the character, rigged, T-pose, no animation (2.7 MB)
+    tutor.glb            the character, rigged, T-pose, no animation (4.3 MB)
     anim/idle.json       animation clips, one per avatar state
     anim/talk.json
     anim/think.json
@@ -26,7 +26,7 @@ The converter strips everything else:
 2. Map the filename to a state in `scripts/convert-anims.mjs`
 3. Run `node scripts/convert-anims.mjs`
 
-That turned 28.9 MB of FBX into 2.03 MB of clip JSON, which is what ships in the APK.
+That turned 39.6 MB of FBX into 1.62 MB of clip JSON, which is what ships in the APK.
 
 The converter also strips the `mixamorig:` prefix from every track name so the clips
 bind onto the plain bone names (`Hips`, `Spine`, `Head`, …) used by tutor.glb. If you
@@ -39,7 +39,15 @@ auto-normalised to 2.4 units tall with its feet at y = −1.2 so the rings orbit
 torso. It should face +Z (toward the viewer); if it ends up facing away, add
 `model.rotation.y = Math.PI` in `src/ui/Avatar3D.tsx`.
 
-Keep it under about 3 MB — this ships inside the APK.
+Keep it as small as you can — this ships inside the APK. The current one is 4.3 MB, of
+which 2.8 MB is textures and a single 1024 by 1024 PNG is 1.2 MB of that. The avatar
+draws at 92 pixels, so anything above roughly 512 by 512 is detail nobody can see and
+download size everybody pays for.
+
+After replacing the character, run the tests. tests/avatar-rig.test.ts checks that every
+track in every clip names a bone the new model actually has. That is the failure worth
+guarding against: a renamed rig loads and plays without a single error, and simply never
+moves.
 
 ## The rings
 

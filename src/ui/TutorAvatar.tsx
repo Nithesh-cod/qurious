@@ -80,7 +80,25 @@ export function TutorAvatar({ mood, llm, lang, onLangChange, contextHint }: {
   const [bubble, setBubble] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [listening, setListening] = useState(false);
-  const [wakeOn, setWakeOn] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+  /**
+   * The wake word is always on; this is not a preference.
+   *
+   * It only goes false when the device itself refuses — microphone permission denied, or
+   * no recogniser at all. Retrying forever after a denial would hold the microphone open
+   * and never work, so the listener stands down and says why.
+   */
+  const [wakeBlocked, setWakeBlocked] = useState(false);
+  /**
+   * Bumped every time the wake word fires, purely to rebuild the listener.
+   *
+   * Both recognisers hand back one utterance and stop. The web one restarts itself; the
+   * Android one does not, so after a single "hey tutor" it would go deaf until something
+   * else happened to re-run this effect. Usually speaking or listening does that — but
+   * not when the tutor is muted, which is exactly when nobody would notice it had
+   * stopped. Restarting on a counter makes it unconditional.
+   */
+  const [wakeNonce, setWakeNonce] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   const [muted, setMuted] = useState(false);
 
@@ -101,7 +119,14 @@ export function TutorAvatar({ mood, llm, lang, onLangChange, contextHint }: {
     }
     if (muted || !speechSupported()) { setState('idle'); return; }
     setState('talk');
-    await speak(text, lang, { onLevel: setLevel, onEnd: () => { setLevel(0); setState('idle'); } });
+    // The wake listener pauses while this is true. Without that the tutor hears itself
+    // say "hey" or "tutor" mid-answer and wakes itself in a loop.
+    setSpeaking(true);
+    try {
+      await speak(text, lang, { onLevel: setLevel, onEnd: () => { setLevel(0); setState('idle'); } });
+    } finally {
+      setSpeaking(false);
+    }
   }, [lang, muted]);
 
   // ---------------------------------------------------------------- answering
@@ -190,19 +215,33 @@ export function TutorAvatar({ mood, llm, lang, onLangChange, contextHint }: {
   };
 
   // ---------------------------------------------------------------- wake word
+  /**
+   * Listening for "hey tutor" whenever nothing else is using the microphone.
+   *
+   * There are exactly two reasons to stand down, and neither is a setting. While the
+   * learner is dictating a question the recogniser is already theirs, and two listeners
+   * on one microphone means neither gets a clean utterance. While the tutor is speaking
+   * it would hear its own voice, and any answer containing the word "tutor" would wake
+   * it again — a loop that gets louder.
+   */
   useEffect(() => {
-    if (!wakeOn) { wakeRef.current?.stop(); wakeRef.current = null; return; }
+    if (wakeBlocked || listening || speaking || !listeningSupported()) {
+      wakeRef.current?.stop();
+      wakeRef.current = null;
+      return;
+    }
     wakeRef.current = startWakeWord({
       lang,
       onWake: after => {
+        setWakeNonce(n => n + 1);
         setOpen(true);
         if (after) { setQuestion(after); answerQuestion(after); }
         else { say('Yes? Ask me anything.'); setTimeout(startListening, 900); }
       },
-      onError: msg => { setNotice(msg); setWakeOn(false); },
+      onError: msg => { setNotice(msg); setWakeBlocked(true); },
     });
     return () => { wakeRef.current?.stop(); wakeRef.current = null; };
-  }, [wakeOn, lang, answerQuestion, say, startListening]);
+  }, [wakeBlocked, wakeNonce, listening, speaking, lang, answerQuestion, say, startListening]);
 
   // ---------------------------------------------------------------- reactions
   const lastNonce = useRef(0);
@@ -431,23 +470,18 @@ export function TutorAvatar({ mood, llm, lang, onLangChange, contextHint }: {
                     {LANGS.map(l => <option key={l.code} value={l.code}>{l.native} — {l.label}</option>)}
                   </select>
                 </label>
-                {listeningSupported() && (
-                  <label className="tiny dim wake-toggle">
-                    <input type="checkbox" checked={wakeOn} onChange={e => setWakeOn(e.target.checked)} />
-                    “Hey tutor” wake word
-                  </label>
-                )}
                 <label className="tiny dim wake-toggle">
                   <input type="checkbox" checked={roam} onChange={e => setRoam(e.target.checked)} />
                   Let me wander the screen
                 </label>
               </div>
-              {wakeOn && (
-                <p className="tiny dim">
-                  Listening for “hey tutor”. On Android this needs a network connection and microphone permission —
-                  tapping the avatar always works regardless.
-                </p>
-              )}
+              <p className="tiny dim">
+                {!listeningSupported()
+                  ? 'This device has no speech recognition, so “hey tutor” is unavailable. Tap the avatar instead.'
+                  : wakeBlocked
+                    ? 'The microphone is unavailable, so “hey tutor” has stood down. Tapping the avatar always works.'
+                    : 'Say “hey tutor” any time. On Android this needs microphone permission and a network connection — tapping the avatar always works regardless.'}
+              </p>
             </div>
           </section>
         </>

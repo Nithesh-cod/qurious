@@ -8,7 +8,7 @@
  */
 
 import { execSync } from 'node:child_process';
-import { copyFileSync, existsSync, statSync, mkdirSync, writeFileSync, readdirSync } from 'node:fs';
+import { copyFileSync, existsSync, statSync, mkdirSync, writeFileSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -29,6 +29,32 @@ const run = (cmd, cwd) =>
 if (!existsSync(sdk)) {
   console.error(`Android SDK not found at ${sdk}. Set ANDROID_HOME and try again.`);
   process.exit(1);
+}
+
+/**
+ * Say out loud whether this APK carries an API key.
+ *
+ * Vite inlines VITE_* variables as literal strings, so a key in .env ends up readable
+ * inside the APK. That is what makes the phone work without typing it in, and it is
+ * also why the resulting file must not be handed around. Silence here is how a key ends
+ * up somewhere nobody meant it to be, so the build states the situation either way.
+ */
+step('Checking what this build will carry');
+const envFile = join(project, '.env');
+const envKey = process.env.VITE_LLM_API_KEY ?? (
+  existsSync(envFile)
+    ? (readFileSync(envFile, 'utf8').match(/^\s*VITE_LLM_API_KEY\s*=\s*(.+)$/m)?.[1] ?? '').trim()
+    : ''
+);
+if (envKey) {
+  console.log(
+    `  This APK will contain the API key from .env (${envKey.slice(0, 7)}…, ${envKey.length} chars).\n` +
+    '  That is deliberate: it is why the tutor reaches the language model on your phone\n' +
+    '  without you typing anything. Install it; do not publish it or send it to anyone.\n' +
+    '  For a shareable build, run:  VITE_LLM_API_KEY= npm run apk'
+  );
+} else {
+  console.log('  No API key in this build. The tutor runs on its offline base only.');
 }
 
 step('Building the web bundle');
