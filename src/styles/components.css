@@ -602,3 +602,7 @@
 }
 .points-breakdown .num { color: var(--accent); font-weight: 650; }
 .tier-chip { font-variant: small-caps; letter-spacing: .04em; }
+
+/* Entanglement map — pairs, not just symptoms. */
+.entangle-map { margin: 6px auto 10px; display: grid; justify-items: center; gap: 4px; max-width: 260px; }
+.entangle-map figcaption { text-align: center; }

@@ -23,6 +23,7 @@ import { AnimatedExplainer } from './ui/AnimatedExplainer';
 import { LessonBody } from './ui/LessonBody';
 import { NoiseLab } from './ui/NoiseLab';
 import { AmplitudeField3D, MAX_STATES_3D } from './ui/AmplitudeField3D';
+import { EntanglementMap } from './ui/EntanglementMap';
 import { useSlideIn } from './ui/useSlideIn';
 import { useHistory } from './ui/useHistory';
 import { TutorAvatar, type TutorMood } from './ui/TutorAvatar';
@@ -408,7 +409,15 @@ function BuildView({ circuit, setCircuit, state, error, diagnostics, step, setSt
                     return <P key={q} {...b} label={`q${q}`} size={webglOk ? 168 : 140} />;
                   })}
                 </div>
-                {tab === 'state' && <AmplitudeBars state={state} />}
+                {tab === 'state' && (
+                  <>
+                    {/* The spheres show that a qubit is entangled; this shows with whom.
+                        Three collapsed arrows look the same whether all three share one
+                        state or two are paired and one is not. */}
+                    <EntanglementMap state={state} />
+                    <AmplitudeBars state={state} />
+                  </>
+                )}
                 {tab === 'phasors' && (
                   state.size <= MAX_STATES_3D
                     ? <AmplitudeField3D state={state} height={260} />
