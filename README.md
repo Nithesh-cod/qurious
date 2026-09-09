@@ -65,7 +65,7 @@ its bit ordering is confirmed against Qiskit rather than against our own engine,
 a shared misunderstanding between simulator and test would otherwise go unnoticed.
 
 ```bash
-npx vitest run                    # 324 tests
+npx vitest run                    # 448 tests
 python server/crosscheck.py       # the Qiskit comparison (needs qiskit + qiskit-aer)
 python server/qpe_crosscheck.py   # phase estimation, verified independently
 ```
@@ -106,7 +106,7 @@ key baked in at build time would ship inside the bundle for anyone to read.
 src/core/      simulator, circuit IR, transpilers, noise, grading, knowledge base, tutor
 src/ui/        canvas, code panel, state views, Noise Lab, 3D avatar
 src/content/   lessons, challenges, quizzes — data, not code
-tests/         324 tests: physics, content claims, prose readability, avatar rig, and the Qiskit cross-check fixtures
+tests/         448 tests: physics, content claims, prose readability, curriculum shape, contrast, and the Qiskit cross-check fixtures
 server/        optional FastAPI service and the Qiskit comparison script
 scripts/       APK build and Android branding generation
 docs/          the SIH submission deck and the competitive comparison
