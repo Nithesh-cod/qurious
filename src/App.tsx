@@ -17,7 +17,7 @@ import { ModuleCheck } from './ui/ModuleCheck';
 import { TopicQuiz } from './ui/TopicQuiz';
 import {
   MODULES, earnedBadges, lessonsOf, moduleProgress, unmoduledLessons,
-  earnedTopicBadges, lessonsOfTopic, topicById, topicProgress, topicQuestions, topicReadiness,
+  earnedTopicBadges, lessonsOfTopic, topicById, topicProgress, topicQuestions, topicReadiness, TOPICS,
 } from './content/modules';
 import { AnimatedExplainer } from './ui/AnimatedExplainer';
 import { LessonBody } from './ui/LessonBody';
@@ -27,6 +27,7 @@ import { useSlideIn } from './ui/useSlideIn';
 import { TutorAvatar, type TutorMood } from './ui/TutorAvatar';
 import { SettingsSheet } from './ui/SettingsSheet';
 import { loadConfig, type LlmConfig } from './core/llm';
+import { computeScore, levelFor, recordPractice, tierOf, TIER_LABEL, challengePoints } from './core/points';
 import type { LangCode } from './core/speech';
 
 type View = 'build' | 'learn' | 'practice' | 'challenges' | 'dashboard' | 'instructor';
@@ -46,6 +47,11 @@ interface Saved {
   lessonsDone: string[];
   /** Quiz item id -> whether it was answered correctly. */
   quizAnswers: Record<string, boolean>;
+  /**
+   * ISO days on which the learner did something. The only progress fact the rest of the
+   * app does not already know, so it is the only thing the scoring layer stores.
+   */
+  practiceDays: string[];
   circuit?: Circuit;
   theme: 'dark' | 'light';
   lang: LangCode;
@@ -54,9 +60,9 @@ interface Saved {
 function load(): Saved {
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    if (raw) return { theme: 'dark', lang: 'en-IN', solved: [], lessonsDone: [], quizAnswers: {}, mastery: initialMastery(), ...JSON.parse(raw) };
+    if (raw) return { theme: 'dark', lang: 'en-IN', solved: [], lessonsDone: [], quizAnswers: {}, practiceDays: [], mastery: initialMastery(), ...JSON.parse(raw) };
   } catch { /* private mode, cleared storage — fall through to defaults */ }
-  return { mastery: initialMastery(), solved: [], lessonsDone: [], quizAnswers: {}, theme: 'dark', lang: 'en-IN' };
+  return { mastery: initialMastery(), solved: [], lessonsDone: [], quizAnswers: {}, practiceDays: [], theme: 'dark', lang: 'en-IN' };
 }
 function save(s: Saved) {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch { /* nothing we can do, and nothing breaks */ }
@@ -108,6 +114,7 @@ export default function App() {
       ...s,
       mastery: observe(s.mastery, ch.concept, correct),
       solved: correct && !s.solved.includes(ch.id) ? [...s.solved, ch.id] : s.solved,
+      practiceDays: recordPractice(s.practiceDays),
     }));
     react(
       correct ? 'celebrate' : 'encourage',
@@ -123,6 +130,7 @@ export default function App() {
       // Finishing a lesson is weak evidence of understanding, so it nudges the model
       // rather than driving it. Challenges and quizzes carry the real signal.
       mastery: observe(s.mastery, lesson.concept, true),
+      practiceDays: recordPractice(s.practiceDays),
     }));
   }, [react]);
 
@@ -131,6 +139,7 @@ export default function App() {
       ...s,
       quizAnswers: { ...s.quizAnswers, [item.id]: correct },
       mastery: observe(s.mastery, item.concept, correct),
+      practiceDays: recordPractice(s.practiceDays),
     }));
     react(correct ? 'celebrate' : 'encourage');
   }, [react]);
@@ -216,6 +225,7 @@ export default function App() {
           <DashboardView
             mastery={saved.mastery} solved={saved.solved}
             lessonsDone={saved.lessonsDone} quizAnswers={saved.quizAnswers}
+            practiceDays={saved.practiceDays}
             onGo={setView}
           />
         )}
@@ -706,11 +716,16 @@ function ChallengeView({ challenge, setChallenge, solved, onResult, circuit, set
               <button key={c.id} className={`glass glass-hover lesson-card rise rise-${Math.min(i + 1, 3)}`} onClick={() => start(c)}>
                 <div className="lesson-card-top">
                   <span className="chip tiny">{c.concept}</span>
+                  {/* Tier is read from the solution's own shape, so the label cannot
+                      disagree with how demanding the exercise actually is. */}
+                  <span className="chip tiny tier-chip">{TIER_LABEL[tierOf(c)]}</span>
                   {solved.includes(c.id) && <span className="chip chip-mint tiny">solved</span>}
                 </div>
                 <h3>{c.title}</h3>
                 <p className="tiny dim">{c.brief}</p>
-                <span className="lesson-card-go tiny">Start →</span>
+                <span className="lesson-card-go tiny">
+                  {solved.includes(c.id) ? 'Solved' : `Start — ${challengePoints(c)} pts`} →
+                </span>
               </button>
             ))}
           </div>
@@ -779,9 +794,9 @@ function ChallengeView({ challenge, setChallenge, solved, onResult, circuit, set
 
 /* ------------------------------------------------------------------ progress */
 
-function DashboardView({ mastery, solved, lessonsDone, quizAnswers, onGo }: {
+function DashboardView({ mastery, solved, lessonsDone, quizAnswers, practiceDays, onGo }: {
   mastery: Mastery; solved: string[]; lessonsDone: string[];
-  quizAnswers: Record<string, boolean>; onGo: (v: View) => void;
+  quizAnswers: Record<string, boolean>; practiceDays: string[]; onGo: (v: View) => void;
 }) {
   const rec = recommend(mastery);
   const recConcept = CONCEPTS.find(c => c.id === rec.conceptId)!;
@@ -794,9 +809,22 @@ function DashboardView({ mastery, solved, lessonsDone, quizAnswers, onGo }: {
   const weaknesses = [...ranked].reverse().filter(c => (mastery[c.id] ?? 0) < 0.6).slice(0, 3);
 
   const badges = earnedBadges(lessonsDone, quizAnswers);
+  const topicBadges = earnedTopicBadges(lessonsDone, quizAnswers);
+
+  // Scored from the progress that already exists rather than from a parallel ledger,
+  // so the number on screen can never disagree with what the learner actually did.
+  const score = computeScore({
+    lessonsDone, quizAnswers, solved, practiceDays,
+    challenges: CHALLENGES,
+    topicBadges: topicBadges.length,
+    moduleBadges: badges.length,
+  });
+  const { level, next, progress } = levelFor(score.total);
 
   const stats = [
-    { label: 'Badges earned', value: `${badges.length}/${MODULES.length}`, view: 'learn' as View },
+    { label: 'Points', value: score.total.toLocaleString(), view: 'learn' as View },
+    { label: 'Day streak', value: score.streak > 0 ? `${score.streak}` : '—', view: 'practice' as View },
+    { label: 'Badges earned', value: `${topicBadges.length + badges.length}/${TOPICS.length + MODULES.length}`, view: 'learn' as View },
     { label: 'Lessons completed', value: `${lessonsDone.length}/${ALL_LESSONS.length}`, view: 'learn' as View },
     { label: 'Challenges solved', value: `${solved.length}/${CHALLENGES.length}`, view: 'challenges' as View },
     { label: 'Quiz accuracy', value: quizDone ? `${Math.round((quizRight / quizDone) * 100)}%` : '—', view: 'practice' as View },
@@ -831,6 +859,34 @@ function DashboardView({ mastery, solved, lessonsDone, quizAnswers, onGo }: {
               ? 'Every module finished. Try the challenges next.'
               : 'A badge needs both halves: every lesson in the module read, and its check passed.'}
           </p>
+        </section>
+
+        <section className="glass panel level-card rise rise-1">
+          <div className="level-head">
+            <div>
+              <span className="tiny dim">Level</span>
+              <h2>{level.name}</h2>
+            </div>
+            <span className="level-points num">{score.total.toLocaleString()} pts</span>
+          </div>
+          <div className="level-bar" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100}>
+            <span style={{ width: `${Math.round(progress * 100)}%` }} />
+          </div>
+          <p className="tiny dim">
+            {next
+              ? `${(next.at - score.total).toLocaleString()} points to ${next.name}`
+              : 'Top level reached.'}
+            {score.streak > 0 && ` · ${score.streak} day streak`}
+          </p>
+          <ul className="points-breakdown tiny">
+            {score.breakdown.filter(b => b.points > 0).map(b => (
+              <li key={b.label}>
+                <span>{b.label}</span>
+                <span className="dim">{b.detail}</span>
+                <span className="num">+{b.points}</span>
+              </li>
+            ))}
+          </ul>
         </section>
 
         <div className="stat-grid rise rise-1">

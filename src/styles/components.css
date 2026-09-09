@@ -580,3 +580,25 @@
   .topic-quiz-row { flex-wrap: wrap; }
   .topic-quiz-row .btn { flex: 1 1 100%; justify-content: center; }
 }
+
+/* ---------------------------------------------------------------- points and level */
+.level-card { display: grid; gap: 10px; }
+.level-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.level-head h2 { margin: 2px 0 0; }
+.level-points { font-size: 20px; font-weight: 700; color: var(--accent); }
+.level-bar {
+  height: 10px; border-radius: 99px; overflow: hidden;
+  background: var(--glass-border);
+}
+.level-bar > span {
+  display: block; height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width .4s var(--ease-liquid, ease);
+}
+.points-breakdown { display: grid; gap: 4px; margin: 4px 0 0; padding: 0; list-style: none; }
+.points-breakdown li {
+  display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: baseline;
+  padding: 3px 0; border-top: 1px solid var(--glass-border);
+}
+.points-breakdown .num { color: var(--accent); font-weight: 650; }
+.tier-chip { font-variant: small-caps; letter-spacing: .04em; }
