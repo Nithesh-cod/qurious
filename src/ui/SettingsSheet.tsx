@@ -10,6 +10,7 @@ import {
   PROVIDERS, saveConfig, testConnection, type LlmConfig, type ProviderId,
 } from '../core/llm';
 import { useSlideIn } from './useSlideIn';
+import { PrivacyPolicy } from './PrivacyPolicy';
 import { analyticsEnabled, setAnalyticsEnabled, exportEvents, summarise, clearEvents } from '../core/analytics';
 
 export function SettingsSheet({ config, onChange, onClose }: {
@@ -17,6 +18,7 @@ export function SettingsSheet({ config, onChange, onClose }: {
   onChange: (c: LlmConfig) => void;
   onClose: () => void;
 }) {
+  const [privacy, setPrivacy] = useState(false);
   const [draft, setDraft] = useState<LlmConfig>(config);
   const slide = useSlideIn();
   const [testing, setTesting] = useState(false);
@@ -155,6 +157,14 @@ export function SettingsSheet({ config, onChange, onClose }: {
           )}
 
           <AnalyticsSection />
+
+          <div className="settings-block">
+            <h4 className="tiny">Privacy</h4>
+            <button className="btn btn-sm btn-ghost" onClick={() => setPrivacy(v => !v)}>
+              {privacy ? 'Hide the privacy policy' : 'Read the privacy policy'}
+            </button>
+            {privacy && <PrivacyPolicy onClose={() => setPrivacy(false)} />}
+          </div>
         </div>
       </section>
     </>
