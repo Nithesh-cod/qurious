@@ -30,6 +30,7 @@ import { TutorAvatar, type TutorMood } from './ui/TutorAvatar';
 import { SettingsSheet } from './ui/SettingsSheet';
 import { loadConfig, type LlmConfig } from './core/llm';
 import { useOnline } from './ui/UiState';
+import { track, endTiming, startTiming } from './core/analytics';
 import { computeScore, levelFor, recordPractice, tierOf, TIER_LABEL, challengePoints } from './core/points';
 import type { LangCode } from './core/speech';
 
@@ -146,6 +147,7 @@ export default function App() {
   }, [undo, redo]);
 
   const markSolved = useCallback((ch: Challenge, correct: boolean) => {
+    track(correct ? 'challenge_pass' : 'challenge_fail', ch.id);
     setSaved(s => ({
       ...s,
       mastery: observe(s.mastery, ch.concept, correct),
@@ -159,6 +161,9 @@ export default function App() {
   }, [react]);
 
   const markLessonDone = useCallback((lesson: Lesson) => {
+    // Closes the span opened when the lesson was first shown, so time-on-task is a real
+    // measurement rather than a guess.
+    endTiming(`lesson:${lesson.id}`, 'lesson_complete', lesson.id);
     react('celebrate', `Nice — ${lesson.title} finished.`);
     setSaved(s => ({
       ...s,
@@ -463,6 +468,15 @@ function BuildView({ circuit, setCircuit, state, error, diagnostics, step, setSt
 
 /* ------------------------------------------------------------------ learn */
 
+/** One way in, so time-on-task is measured from wherever the lesson was opened. */
+function useOpenLesson(setLesson: (l: Lesson) => void) {
+  return useCallback((l: Lesson) => {
+    track('lesson_open', l.id);
+    startTiming(`lesson:${l.id}`);
+    setLesson(l);
+  }, [setLesson]);
+}
+
 function LearnView({ lesson, setLesson, mastery, done, onDone, onTry, quizAnswers, onQuizAnswer }: {
   lesson: Lesson | null; setLesson: (l: Lesson | null) => void;
   mastery: Mastery; done: string[]; onDone: (l: Lesson) => void;
@@ -470,6 +484,7 @@ function LearnView({ lesson, setLesson, mastery, done, onDone, onTry, quizAnswer
   quizAnswers: Record<string, boolean>;
   onQuizAnswer: (item: QuizItem, correct: boolean) => void;
 }) {
+  const openLesson = useOpenLesson(setLesson);
   // Which module the learner has opened, and whether they are sitting its check.
   const [openModule, setOpenModule] = useState<string | null>(null);
   const [checking, setChecking] = useState<string | null>(null);
@@ -558,7 +573,7 @@ function LearnView({ lesson, setLesson, mastery, done, onDone, onTry, quizAnswer
                 <ol className="lesson-track">
                   {lessonsOfTopic(t).map((l, i) => (
                     <li key={l.id}>
-                      <button className={`glass glass-hover lesson-row ${done.includes(l.id) ? 'is-done' : ''}`} onClick={() => setLesson(l)}>
+                      <button className={`glass glass-hover lesson-row ${done.includes(l.id) ? 'is-done' : ''}`} onClick={() => openLesson(l)}>
                         <span className="lesson-row-n">{done.includes(l.id) ? '✓' : i + 1}</span>
                         <span className="lesson-row-main">
                           <strong>{l.title}</strong>
@@ -657,7 +672,7 @@ function LearnView({ lesson, setLesson, mastery, done, onDone, onTry, quizAnswer
               <h2 className="rise rise-2">More lessons</h2>
               <div className="card-grid">
                 {extra.map(l => (
-                  <button key={l.id} className="glass glass-hover lesson-card" onClick={() => setLesson(l)}>
+                  <button key={l.id} className="glass glass-hover lesson-card" onClick={() => openLesson(l)}>
                     <div className="lesson-card-top">
                       <span className="chip chip-accent tiny">{l.minutes} min</span>
                       {done.includes(l.id) && <span className="chip chip-mint tiny">completed</span>}
