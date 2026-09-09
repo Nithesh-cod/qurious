@@ -14,8 +14,10 @@ import { CodePanel } from './ui/CodePanel';
 import { TutorPanel } from './ui/TutorPanel';
 import { QuizView } from './ui/QuizView';
 import { ModuleCheck } from './ui/ModuleCheck';
+import { TopicQuiz } from './ui/TopicQuiz';
 import {
   MODULES, earnedBadges, lessonsOf, moduleProgress, unmoduledLessons,
+  earnedTopicBadges, lessonsOfTopic, topicById, topicProgress, topicQuestions, topicReadiness,
 } from './content/modules';
 import { AnimatedExplainer } from './ui/AnimatedExplainer';
 import { LessonBody } from './ui/LessonBody';
@@ -397,8 +399,26 @@ function LearnView({ lesson, setLesson, mastery, done, onDone, onTry, quizAnswer
   // Which module the learner has opened, and whether they are sitting its check.
   const [openModule, setOpenModule] = useState<string | null>(null);
   const [checking, setChecking] = useState<string | null>(null);
+  /** Which topic's end-of-topic quiz is open, if any. */
+  const [quizTopic, setQuizTopic] = useState<string | null>(null);
 
   const active = MODULES.find(m => m.id === (checking ?? openModule)) ?? null;
+
+  // An end-of-topic quiz takes over the page while it is open.
+  const openTopic = quizTopic ? topicById(quizTopic) : null;
+  if (!lesson && openTopic) {
+    return (
+      <div className="stage stage-single scroll">
+        <TopicQuiz
+          topic={openTopic}
+          lessonsDone={done}
+          quizAnswers={quizAnswers}
+          onAnswer={onQuizAnswer}
+          onBack={() => setQuizTopic(null)}
+        />
+      </div>
+    );
+  }
 
   if (!lesson && checking && active) {
     return (
@@ -428,20 +448,71 @@ function LearnView({ lesson, setLesson, mastery, done, onDone, onTry, quizAnswer
           </div>
           <p className="rise rise-1">{active.blurb}</p>
 
-          <ol className="lesson-track rise rise-1">
-            {lessons.map((l, i) => (
-              <li key={l.id}>
-                <button className={`glass glass-hover lesson-row ${done.includes(l.id) ? 'is-done' : ''}`} onClick={() => setLesson(l)}>
-                  <span className="lesson-row-n">{done.includes(l.id) ? '✓' : i + 1}</span>
-                  <span className="lesson-row-main">
-                    <strong>{l.title}</strong>
-                    <span className="tiny dim">{l.summary}</span>
-                  </span>
-                  <span className="chip tiny">{l.minutes} min</span>
-                </button>
-              </li>
-            ))}
-          </ol>
+          {/*
+            The roadmap: Module → Topic → lesson unit.
+            A topic carries its own quiz and badge, so a learner finishes something in a
+            sitting rather than working for an hour to earn nothing. Prerequisites are
+            shown as a nudge and never as a wall — somebody who already knows linear
+            algebra should not be made to sit through it.
+          */}
+          {active.topics.map((t, ti) => {
+            const tp = topicProgress(t, done, quizAnswers);
+            const ready = topicReadiness(t, done, quizAnswers);
+            return (
+              <section key={t.id} className={`topic-block rise rise-1 ${tp.earned ? 'is-earned' : ''}`}>
+                <header className="topic-head">
+                  <span className="topic-n">{tp.earned ? '✓' : ti + 1}</span>
+                  <div className="topic-head-main">
+                    <h2>{t.title}</h2>
+                    <p className="tiny dim">{t.blurb}</p>
+                  </div>
+                  <span className={`chip tiny ${tp.earned ? 'chip-mint' : ''}`}>{tp.percent}%</span>
+                </header>
+
+                {!ready.ready && (
+                  <p className="tiny notice notice-warn topic-prereq">
+                    Best after {ready.missing.map(p => p.title).join(' and ')}. You can carry on
+                    regardless — this is a suggestion, not a lock.
+                  </p>
+                )}
+                {t.neededFor?.length ? (
+                  <p className="tiny dim topic-needed">
+                    Needed for {t.neededFor.map(id => topicById(id)?.title ?? id).join(', ')}.
+                  </p>
+                ) : null}
+
+                <ol className="lesson-track">
+                  {lessonsOfTopic(t).map((l, i) => (
+                    <li key={l.id}>
+                      <button className={`glass glass-hover lesson-row ${done.includes(l.id) ? 'is-done' : ''}`} onClick={() => setLesson(l)}>
+                        <span className="lesson-row-n">{done.includes(l.id) ? '✓' : i + 1}</span>
+                        <span className="lesson-row-main">
+                          <strong>{l.title}</strong>
+                          <span className="tiny dim">{l.summary}</span>
+                        </span>
+                        <span className="chip tiny">{l.minutes} min</span>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+
+                <div className="topic-quiz-row">
+                  <span className="badge-award-emoji sm" aria-hidden>{t.badge.emoji}</span>
+                  <div className="topic-quiz-copy">
+                    <strong className="tiny">{tp.earned ? `Earned: ${t.badge.name}` : t.badge.name}</strong>
+                    <span className="tiny dim">
+                      {tp.lessonsDone}/{tp.lessonsTotal} read
+                      {tp.quizTotal > 0 && ` · quiz ${tp.quizRight}/${tp.quizTotal}`}
+                    </span>
+                  </div>
+                  <button className="btn btn-sm btn-primary" onClick={() => setQuizTopic(t.id)}>
+                    {tp.quizPassed ? 'Retake quiz' : 'Take the quiz'}
+                  </button>
+                </div>
+              </section>
+            );
+          })}
+          {lessons.length === 0 && <p className="tiny dim">No lessons in this module yet.</p>}
 
           <article className={`glass panel module-check-cta rise rise-2 ${prog.earned ? 'is-earned' : ''}`}>
             <span className="badge-award-emoji" aria-hidden>{active.badge.emoji}</span>

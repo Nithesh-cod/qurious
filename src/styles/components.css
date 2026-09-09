@@ -544,3 +544,39 @@
 .lesson-bullets { margin: 0; padding-left: 18px; display: grid; gap: 6px; line-height: 1.55; }
 .lesson-bullets li::marker { color: var(--accent); }
 .lesson-body strong { color: var(--text-strong, inherit); font-weight: 650; }
+
+/* ---------------------------------------------------------------- topic roadmap
+   Module -> Topic -> lesson. The topic block is the finishable unit, so it carries
+   its own rule, badge row and quiz button. Colours come from the theme tokens. */
+.topic-block {
+  display: grid; gap: 10px;
+  padding: 14px 16px 16px;
+  border-radius: var(--r-lg, 16px);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg, rgba(255,255,255,.02));
+  margin-bottom: 14px;
+}
+.topic-block.is-earned { border-color: var(--mint, #6ef0c8); }
+.topic-head { display: flex; align-items: flex-start; gap: 12px; }
+.topic-head-main { flex: 1 1 auto; min-width: 0; }
+.topic-head h2 { margin: 0; font-size: 19px; }
+.topic-head p { margin: 2px 0 0; }
+.topic-n {
+  flex: none; width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 13px; font-weight: 700;
+  background: var(--glass-border); color: var(--text, #eaf2ff);
+}
+.topic-block.is-earned .topic-n { background: var(--mint, #6ef0c8); color: #05231b; }
+.topic-prereq, .topic-needed { margin: 0; }
+.topic-quiz-row {
+  display: flex; align-items: center; gap: 12px;
+  padding-top: 10px; border-top: 1px solid var(--glass-border);
+}
+.topic-quiz-copy { flex: 1 1 auto; display: grid; min-width: 0; }
+.badge-award-emoji.sm { font-size: 24px; }
+
+@media (max-width: 760px) {
+  .topic-quiz-row { flex-wrap: wrap; }
+  .topic-quiz-row .btn { flex: 1 1 100%; justify-content: center; }
+}

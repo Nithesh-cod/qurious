@@ -11,6 +11,7 @@
 import { emptyCircuit, newId, type Circuit, type GateName } from '../core/ir';
 import type { Challenge } from '../core/grade';
 import { ALGORITHM_CHALLENGES } from './algorithmChallenges';
+import { PREREQUISITE_LESSONS } from './prerequisites';
 import type { ExplainerScript } from '../ui/AnimatedExplainer';
 
 const g = (name: GateName, qubits: number[], params?: number[]) => ({
@@ -742,6 +743,83 @@ export type QuizItem =
     };
 
 export const QUIZZES: QuizItem[] = [
+  // ---------------------------------------------------------------- Module 0 maths
+  {
+    kind: 'mcq', id: 'q-pre-i2', concept: 'maths-complex',
+    question: 'What is i squared?',
+    options: ['1', '−1', 'i', '0'],
+    answer: 1,
+    explain: 'i squared is −1. No ordinary number does that, which is exactly why i is a new kind of number rather than a rearrangement of the old ones.',
+  },
+  {
+    kind: 'mcq', id: 'q-pre-polar', concept: 'maths-complex',
+    question: 'In a quantum amplitude, what does the angle of the complex number carry?',
+    options: ['The probability', 'The phase', 'The number of qubits', 'Nothing measurable or useful'],
+    answer: 1,
+    explain: 'The magnitude squared gives the probability; the angle is the phase. Phase is invisible to a single measurement but decides how paths interfere.',
+  },
+  {
+    kind: 'truefalse', id: 'q-pre-basis', concept: 'maths-vectors',
+    question: 'Ket zero and ket one are the only possible basis for a single qubit.',
+    answer: false,
+    explain: 'Other bases are equally valid — the plus and minus states form one. Which basis you measure in is a choice, and it changes what you can learn.',
+  },
+  {
+    kind: 'mcq', id: 'q-pre-inner', concept: 'maths-vectors',
+    question: 'Two states have an inner product of zero. What does that mean?',
+    options: [
+      'They are the same state',
+      'They are orthogonal, so perfectly distinguishable',
+      'One of them is invalid',
+      'They are entangled',
+    ],
+    answer: 1,
+    explain: 'An inner product of zero means orthogonal. A measurement designed to test for one will never accept the other.',
+  },
+  {
+    kind: 'mcq', id: 'q-pre-unitary', concept: 'maths-matrices',
+    question: 'Why must every quantum gate be unitary?',
+    options: [
+      'So it runs faster on hardware',
+      'So it is reversible and keeps the probabilities totalling one',
+      'So it can be written as a square grid',
+      'So it commutes with every other gate',
+    ],
+    answer: 1,
+    explain: 'Unitary is the mathematical statement of two physical facts: the evolution can be undone, and a valid state stays valid because the total probability is preserved.',
+  },
+  {
+    kind: 'truefalse', id: 'q-pre-commute', concept: 'maths-matrices',
+    question: 'Applying gate A then gate B always gives the same result as B then A.',
+    answer: false,
+    explain: 'Matrix multiplication does not commute in general, which is the same fact as gates giving different results in different orders. Try it in the builder.',
+  },
+  {
+    kind: 'mcq', id: 'q-pre-born', concept: 'maths-probability',
+    question: 'An amplitude is −0.707. What is the probability of that outcome?',
+    options: ['−0.5', '0.5', '0.707', '0'],
+    answer: 1,
+    explain: 'Probability is the square of the magnitude, so the sign disappears: 0.707 squared is 0.5. That is why phase is invisible to a single measurement.',
+  },
+  {
+    kind: 'truefalse', id: 'q-pre-cancel', concept: 'maths-probability',
+    question: 'Two paths leading to the same outcome always make that outcome more likely.',
+    answer: false,
+    explain: 'True for classical probabilities, false for amplitudes. Amplitudes add before they are squared, so +0.5 and −0.5 cancel to nothing. Every quantum speed-up lives in that gap.',
+  },
+  {
+    kind: 'mcq', id: 'q-pre-halfangle', concept: 'maths-trig',
+    question: 'RY(π) turns a qubit by a half turn. Why does that flip ket zero all the way to ket one?',
+    options: [
+      'Because π radians is 180 degrees on the circle of amplitudes',
+      'Because rotation gates use half the angle, so cos(π/2) = 0 and sin(π/2) = 1',
+      'Because sine and cosine are equal at π',
+      'It does not — it lands on the equator',
+    ],
+    answer: 1,
+    explain: 'RY(θ) sends ket zero to cos(θ/2) ket zero plus sin(θ/2) ket one. At θ = π the halves give cos(π/2) = 0 and sin(π/2) = 1, which is exactly ket one.',
+  },
+
   // qubit
   {
     kind: 'mcq', id: 'q-ket', concept: 'qubit',
@@ -906,7 +984,14 @@ import { ALGORITHM_LESSONS } from './algorithms';
  * because every circuit in them is asserted against the simulator by
  * tests/algorithms.test.ts.
  */
-export const ALL_LESSONS: Lesson[] = [...LESSONS, ...ALGORITHM_LESSONS];
+/**
+ * Every lesson, prerequisites first.
+ *
+ * Module 0 leads because its whole purpose is to come before the quantum content;
+ * a learner who meets superposition before vectors has been failed by the ordering,
+ * not by the explanation.
+ */
+export const ALL_LESSONS: Lesson[] = [...PREREQUISITE_LESSONS, ...LESSONS, ...ALGORITHM_LESSONS];
 
 export const QUIZ_BY_CONCEPT = (concept: string) => QUIZZES.filter(q => q.concept === concept);
 export const CHALLENGE_BY_CONCEPT = (concept: string) => CHALLENGES.filter(c => c.concept === concept);
