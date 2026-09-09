@@ -24,6 +24,7 @@ import { LessonBody } from './ui/LessonBody';
 import { NoiseLab } from './ui/NoiseLab';
 import { AmplitudeField3D, MAX_STATES_3D } from './ui/AmplitudeField3D';
 import { useSlideIn } from './ui/useSlideIn';
+import { useHistory } from './ui/useHistory';
 import { TutorAvatar, type TutorMood } from './ui/TutorAvatar';
 import { SettingsSheet } from './ui/SettingsSheet';
 import { loadConfig, type LlmConfig } from './core/llm';
@@ -104,10 +105,42 @@ export default function App() {
     return result.trace[Math.min(step, result.trace.length - 1)] ?? result.state;
   }, [result, step]);
 
+  const history = useHistory(circuit);
+
+  /**
+   * Every circuit change goes through here, so history sees all of them and the IR stays
+   * the one source of truth. Undo writes back through the same setter, which means every
+   * consumer — canvas, code panel, simulator, tutor — updates together.
+   */
   const setCircuitSafe = useCallback((c: Circuit) => {
+    history.push(c);
     setCircuit(c);
     setStep(undefined);
-  }, []);
+  }, [history]);
+
+  const undo = useCallback(() => {
+    const c = history.undo();
+    if (c) { setCircuit(c); setStep(undefined); }
+  }, [history]);
+
+  const redo = useCallback(() => {
+    const c = history.redo();
+    if (c) { setCircuit(c); setStep(undefined); }
+  }, [history]);
+
+  // Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z (or Ctrl+Y), ignored while typing in the editor.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
+      const k = e.key.toLowerCase();
+      if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+      else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [undo, redo]);
 
   const markSolved = useCallback((ch: Challenge, correct: boolean) => {
     setSaved(s => ({
@@ -195,6 +228,8 @@ export default function App() {
             step={step} setStep={setStep} shots={shots} setShots={setShots}
             traceLength={result.trace.length}
             onOpenSheet={setSheet}
+            undo={undo} redo={redo}
+            canUndo={history.canUndo} canRedo={history.canRedo}
           />
         )}
 
@@ -290,8 +325,9 @@ function BuildSheet({ kind, onClose, children }: {
 
 /* ------------------------------------------------------------------ build */
 
-function BuildView({ circuit, setCircuit, state, error, diagnostics, step, setStep, shots, setShots, traceLength, onOpenSheet }: {
+function BuildView({ circuit, setCircuit, state, error, diagnostics, step, setStep, shots, setShots, traceLength, onOpenSheet, undo, redo, canUndo, canRedo }: {
   circuit: Circuit; setCircuit: (c: Circuit) => void;
+  undo: () => void; redo: () => void; canUndo: boolean; canRedo: boolean;
   state: Statevector | null; error: string | null;
   diagnostics: ReturnType<typeof validate>;
   step?: number; setStep: (n: number | undefined) => void;
@@ -317,6 +353,16 @@ function BuildView({ circuit, setCircuit, state, error, diagnostics, step, setSt
                 <button aria-pressed={false} onClick={() => setCircuit({ ...circuit, qubits: Math.max(1, circuit.qubits - 1), ops: circuit.ops.filter(o => o.qubits.every(q => q < circuit.qubits - 1)) })}>−</button>
                 <button aria-pressed={false} onClick={() => setCircuit({ ...circuit, qubits: Math.min(12, circuit.qubits + 1) })}>+</button>
               </div>
+              {/* Undo makes experimenting cheap. Without it a wrong delete means
+                  rebuilding by hand, and learners stop trying things. */}
+              <button
+                className="btn btn-sm btn-ghost" title="Undo (Ctrl+Z)"
+                disabled={!canUndo} onClick={undo}
+              >↶</button>
+              <button
+                className="btn btn-sm btn-ghost" title="Redo (Ctrl+Shift+Z)"
+                disabled={!canRedo} onClick={redo}
+              >↷</button>
               <button className="btn btn-sm btn-ghost" onClick={() => setCircuit(emptyCircuit(circuit.qubits, circuit.name))}>Clear</button>
             </div>
           </div>
