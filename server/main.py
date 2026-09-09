@@ -207,8 +207,13 @@ def health() -> dict[str, Any]:
 
 @app.post("/simulate")
 def simulate(req: SimRequest) -> dict[str, Any]:
-    """Run a circuit on a real SDK. Used for circuits too large for the browser,
-    and to show the same circuit producing the same result across three frameworks."""
+    """Run a circuit on a real SDK, for circuits too large for the browser.
+
+    Note on wording: only Qiskit is cross-checked against our engine
+    (server/crosscheck.py, 22 circuits). PennyLane and Cirq are export targets that
+    can be executed here if installed — running them is not the same as having
+    verified they agree, and this endpoint must not be described as if it were.
+    """
     fn = BACKENDS.get(req.backend)
     if fn is None:
         raise HTTPException(400, f"Backend '{req.backend}' is not available on this server.")
