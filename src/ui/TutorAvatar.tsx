@@ -22,6 +22,7 @@ import {
   LANGS, listenOnce, listeningSupported, primeVoices, speak, speechSupported,
   startWakeWord, stopSpeaking, type LangCode, type ListenHandle,
 } from '../core/speech';
+import { LoadingState } from './UiState';
 
 export interface TutorMood {
   /** Set by the app when something happens, so the avatar reacts. */
@@ -418,7 +419,13 @@ export function TutorAvatar({ mood, llm, lang, onLangChange, contextHint }: {
                 </>
               )}
 
-              {busy && <p className="tiny dim">Thinking…</p>}
+              {busy && (
+                <LoadingState
+                  label="Thinking"
+                  slowAfter={3500}
+                  slowLabel="Still working. The offline topics answer instantly; a language model reply depends on the network."
+                />
+              )}
 
               {answer && (
                 <article className="tutor-answer rise">

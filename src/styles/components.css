@@ -606,3 +606,52 @@
 /* Entanglement map — pairs, not just symptoms. */
 .entangle-map { margin: 6px auto 10px; display: grid; justify-items: center; gap: 4px; max-width: 260px; }
 .entangle-map figcaption { text-align: center; }
+
+/* ---------------------------------------------------------------- UI states
+   One shape for every "nothing here / something went wrong / it worked" moment.
+   Tone only changes the glyph colour and the left edge: the layout stays identical
+   so the shape is recognisable before the words are read. */
+.uistate {
+  display: grid; justify-items: center; text-align: center;
+  gap: 8px; padding: 26px 20px;
+  border: 1px solid var(--glass-border-soft); border-radius: var(--r-lg, 16px);
+  background: var(--glass-bg-soft);
+}
+.uistate-glyph { font-size: 30px; line-height: 1; color: var(--ink-3); }
+.uistate-title { margin: 0; font-size: 17px; color: var(--ink); }
+.uistate-detail { margin: 0; max-width: 46ch; font-size: 14px; color: var(--ink-3); line-height: 1.55; }
+.uistate-actions { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; justify-content: center; }
+
+.uistate-error { border-color: color-mix(in srgb, var(--rose) 42%, transparent); }
+.uistate-error .uistate-glyph { color: var(--rose); }
+.uistate-warn  { border-color: color-mix(in srgb, var(--amber) 42%, transparent); }
+.uistate-warn  .uistate-glyph { color: var(--amber); }
+.uistate-good  { border-color: color-mix(in srgb, var(--mint) 42%, transparent); }
+.uistate-good  .uistate-glyph { color: var(--mint); }
+
+.uistate-spinner {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 2px solid var(--glass-border);
+  border-top-color: var(--accent);
+  animation: uistate-spin .9s linear infinite;
+}
+@keyframes uistate-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .uistate-spinner { animation-duration: 2.4s; }
+}
+
+/* The offline page names what still works as prominently as what does not — the app is
+   offline-first, so "you are offline" alone would be actively misleading. */
+.uistate-split {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+  text-align: left; margin-top: 8px; width: 100%; max-width: 560px;
+}
+.uistate-split ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+.uistate-split li { font-size: 13px; color: var(--ink-3); }
+.uistate-ok   { font-size: 12px; letter-spacing: 1px; color: var(--mint); text-transform: uppercase; }
+.uistate-need { font-size: 12px; letter-spacing: 1px; color: var(--amber); text-transform: uppercase; }
+@media (max-width: 560px) { .uistate-split { grid-template-columns: 1fr; } }
+
+.field-error { margin: 4px 0 0; font-size: 13px; color: var(--rose); }
+.offline-chip { white-space: nowrap; }
+@media (max-width: 760px) { .offline-chip { display: none; } }

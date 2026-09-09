@@ -29,6 +29,7 @@ import { useHistory } from './ui/useHistory';
 import { TutorAvatar, type TutorMood } from './ui/TutorAvatar';
 import { SettingsSheet } from './ui/SettingsSheet';
 import { loadConfig, type LlmConfig } from './core/llm';
+import { useOnline } from './ui/UiState';
 import { computeScore, levelFor, recordPractice, tierOf, TIER_LABEL, challengePoints } from './core/points';
 import type { LangCode } from './core/speech';
 
@@ -73,6 +74,7 @@ function save(s: Saved) {
 export default function App() {
   const [saved, setSaved] = useState<Saved>(load);
   const [view, setView] = useState<View>('learn');
+  const online = useOnline();
   const [circuit, setCircuit] = useState<Circuit>(() => saved.circuit ?? {
     version: 1, name: 'Scratch', qubits: 2,
     ops: [{ id: 'seed1', name: 'h', qubits: [0] }, { id: 'seed2', name: 'cx', qubits: [0, 1] }],
@@ -212,6 +214,13 @@ export default function App() {
             ))}
           </nav>
 
+          {!online && (
+            /* Offline-first is the whole design, so this is information rather than an
+               alarm: it says what is unavailable, not that the app is broken. */
+            <span className="chip chip-amber tiny offline-chip" title="Lessons, challenges and the simulator all run on this device. Only the optional language model needs a connection.">
+              offline · everything still works
+            </span>
+          )}
           <button
             className="btn btn-sm btn-icon"
             title={saved.theme === 'dark' ? 'Switch to light' : 'Switch to dark'}
