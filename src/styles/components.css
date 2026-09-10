@@ -665,3 +665,4 @@
 .privacy h3 { margin: 10px 0 0; font-size: 13px; letter-spacing: .6px;
   text-transform: uppercase; color: var(--accent); }
 .privacy p { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--ink-2); }
+.export-panel { display: grid; gap: 10px; }

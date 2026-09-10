@@ -31,6 +31,7 @@ import { SettingsSheet } from './ui/SettingsSheet';
 import { loadConfig, type LlmConfig } from './core/llm';
 import { useOnline } from './ui/UiState';
 import { track, endTiming, startTiming } from './core/analytics';
+import { progressReportPdf, certificatePdf, canCertify, download } from './core/report';
 import { computeScore, levelFor, recordPractice, tierOf, TIER_LABEL, challengePoints } from './core/points';
 import type { LangCode } from './core/speech';
 
@@ -873,6 +874,24 @@ function ChallengeView({ challenge, setChallenge, solved, onResult, circuit, set
 
 /* ------------------------------------------------------------------ progress */
 
+/**
+ * The name to print on a report or certificate.
+ *
+ * There is no account system in this build, so there is no name to look up. Asking once
+ * and keeping it on the device is honest about that; putting "Learner" on a certificate
+ * somebody wants to show a teacher is not.
+ */
+function learnerName(): string {
+  const KEY = 'quantum-learning:name';
+  try {
+    const saved = localStorage.getItem(KEY);
+    if (saved) return saved;
+    const asked = window.prompt('What name should go on the document?', '')?.trim();
+    if (asked) { localStorage.setItem(KEY, asked); return asked; }
+  } catch { /* storage unavailable */ }
+  return 'Learner';
+}
+
 function DashboardView({ mastery, solved, lessonsDone, quizAnswers, practiceDays, onGo }: {
   mastery: Mastery; solved: string[]; lessonsDone: string[];
   quizAnswers: Record<string, boolean>; practiceDays: string[]; onGo: (v: View) => void;
@@ -910,10 +929,66 @@ function DashboardView({ mastery, solved, lessonsDone, quizAnswers, practiceDays
     { label: 'Questions answered', value: `${quizDone}/${QUIZZES.length}`, view: 'practice' as View },
   ];
 
+  const moduleRows = MODULES.map(m => ({
+    title: m.title,
+    done: moduleProgress(m, lessonsDone, quizAnswers).earned,
+  }));
+  const modulesDone = moduleRows.filter(m => m.done).length;
+
+  /** Everything on the certificate and the report comes from the same figures on screen. */
+  const reportData = () => ({
+    name: learnerName(),
+    lessonsDone: lessonsDone.length,
+    lessonsTotal: ALL_LESSONS.length,
+    challengesSolved: solved.length,
+    challengesTotal: CHALLENGES.length,
+    badges: [...topicBadges, ...badges].map(b => b.name),
+    points: score.total,
+    streak: score.streak,
+    practiceDays: practiceDays.length,
+    modules: moduleRows,
+    generatedAt: new Date(),
+  });
+
   return (
     <div className="stage stage-single scroll">
       <div className="reading reading-wide">
         <h1 className="rise">Your dashboard</h1>
+
+        <section className="glass panel rise export-panel">
+          <span className="section-label">Take it with you</span>
+          <div className="settings-row">
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={() => download(progressReportPdf(reportData()), 'qurious-progress.pdf')}
+            >
+              Download progress report
+            </button>
+            {canCertify(modulesDone, lessonsDone.length) ? (
+              <button
+                className="btn btn-sm btn-ghost"
+                onClick={() => {
+                  const finished = moduleRows.filter(m => m.done);
+                  download(certificatePdf({
+                    name: learnerName(),
+                    achievement: finished.length === MODULES.length
+                      ? 'the full Qurious curriculum'
+                      : finished[finished.length - 1].title,
+                    lessonsCompleted: lessonsDone.length,
+                    challengesSolved: solved.length,
+                    date: new Date(),
+                  }), 'qurious-certificate.pdf');
+                }}
+              >
+                Download certificate
+              </button>
+            ) : (
+              <span className="tiny dim">
+                Finish a whole module — every lesson read and its check passed — to unlock a certificate.
+              </span>
+            )}
+          </div>
+        </section>
 
         {/* Badges first: progress you can see beats a percentage you have to interpret. */}
         <section className="glass panel rise rise-1 badge-panel">
