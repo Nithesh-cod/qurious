@@ -1,0 +1,5 @@
+node_modules/
+lib/
+# Never commit a service account. It is the whole project in one file.
+*serviceAccount*.json
+.runtimeconfig.json

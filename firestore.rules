@@ -1,0 +1,198 @@
+rules_version = '2';
+
+/**
+ * Firestore security rules — the real access boundary.
+ *
+ * Everything the app hides in its UI is a convenience. This file is what actually stops
+ * a learner reading someone else's progress or writing their own role, because a client
+ * can be modified and these rules cannot.
+ *
+ * Three principles, in order of importance:
+ *
+ *   1. Deny by default. The final `match /{document=**}` denies everything not explicitly
+ *      allowed above it, so a collection added later is locked until someone writes a
+ *      rule for it. The failure mode of forgetting is "nothing works", not "anyone reads".
+ *
+ *   2. Role lives in the token, never in a document a user can write. `request.auth.token.role`
+ *      comes from a custom claim set by the Admin SDK server-side. The mirrored `role`
+ *      field on the user document exists only so admin queries can filter, and no client
+ *      may write it — see `roleUnchanged()`.
+ *
+ *   3. Ownership is checked on the document, not on the path alone. A path can be guessed;
+ *      `resource.data.userId` is what the document actually claims.
+ */
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------------------------------------------------------------- helpers
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Email verification is required for writes.
+     *
+     * Reading your own data unverified is harmless; writing is what creates records tied
+     * to an address nobody has proven they control.
+     */
+    function verified() {
+      return signedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.role == 'admin';
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    /** The document being written belongs to the caller. */
+    function ownsIncoming() {
+      return signedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    /**
+     * The write does not touch `role`, or leaves it exactly as it was.
+     *
+     * Without this a learner could set role: 'admin' on their own user document. That
+     * would not grant them the custom claim, so it would not actually let them past these
+     * rules — but it would poison every admin query that filters on the mirror, which is
+     * a quieter and more confusing failure. Block it at the source.
+     */
+    function roleUnchanged() {
+      return !('role' in request.resource.data)
+        || (resource != null && request.resource.data.role == resource.data.role);
+    }
+
+    /** Fields a learner may never set on themselves, because a Cloud Function owns them. */
+    function noPrivilegedFields() {
+      return !request.resource.data.keys().hasAny(['points', 'badges', 'rank', 'claims']);
+    }
+
+    // ---------------------------------------------------------------- users
+
+    match /users/{uid} {
+      // Your own profile, or any profile if you are an admin.
+      allow get, list: if isOwner(uid) || isAdmin();
+
+      // Creating your own record at sign-up. Role is fixed at 'learner'; only a Cloud
+      // Function can change it later.
+      allow create: if verified()
+                    && isOwner(uid)
+                    && request.resource.data.role == 'learner'
+                    && noPrivilegedFields();
+
+      allow update: if verified()
+                    && isOwner(uid)
+                    && roleUnchanged()
+                    && noPrivilegedFields();
+
+      // Deleting an account is a Cloud Function's job — it has to clean up subcollections
+      // and the auth record together, which a client cannot do atomically.
+      allow delete: if false;
+
+      // ------------------------------------------------------------ progress
+      // One document per learner, mirroring the local save. Owner-only, admin-readable.
+      match /progress/{docId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow write: if verified() && isOwner(uid);
+      }
+
+      // ------------------------------------------------------------ badges & points
+      // Read-only to the learner: a badge you can award yourself is not a badge.
+      // Written by the awarding Cloud Function under the Admin SDK, which bypasses rules.
+      match /badges/{badgeId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow write: if false;
+      }
+
+      match /pointsHistory/{entryId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow write: if false;
+      }
+
+      // ------------------------------------------------------------ sessions
+      match /practiceSessions/{sessionId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow create, update: if verified() && isOwner(uid);
+        allow delete: if false;
+      }
+
+      match /noiseLabSessions/{sessionId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow create, update: if verified() && isOwner(uid);
+        allow delete: if false;
+      }
+
+      // ------------------------------------------------------------ playground
+      // Saved circuits. Owner-only both ways — an admin has no business reading a
+      // learner's scratch work, and content management does not require it.
+      match /circuits/{circuitId} {
+        allow read, write: if verified() && isOwner(uid);
+      }
+    }
+
+    // ---------------------------------------------------------------- leaderboard
+
+    /**
+     * Materialised by a Cloud Function, never computed client-side.
+     *
+     * Readable by any signed-in user because that is the point of a leaderboard, and it
+     * carries only display name, points and rank — never an email or a uid that could be
+     * used to address someone.
+     */
+    match /leaderboard/{entryId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    // ---------------------------------------------------------------- content
+
+    /**
+     * Curriculum, authored by admins.
+     *
+     * Readable by everyone signed in, including unverified users — content is not
+     * personal data and gating it behind verification would just make the app look broken
+     * while someone waits for an email.
+     */
+    match /modules/{moduleId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+    match /topics/{topicId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+    match /lessons/{lessonId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+    match /challenges/{challengeId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // ---------------------------------------------------------------- audit
+
+    /**
+     * Admin actions.
+     *
+     * Append-only from the server. No client may write one — an audit log a client can
+     * write is a log an attacker can forge — and no one may edit or delete an entry,
+     * including an admin, because a log that can be rewritten is not evidence.
+     */
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    // ---------------------------------------------------------------- default deny
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

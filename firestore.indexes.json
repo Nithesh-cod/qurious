@@ -1,0 +1,29 @@
+{
+  "indexes": [
+    {
+      "comment": "Leaderboard read path: ordered by points, highest first.",
+      "collectionGroup": "leaderboard",
+      "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "points", "order": "DESCENDING" }]
+    },
+    {
+      "comment": "Admin cohort view: learners in one institution, most recently active first.",
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "institution", "order": "ASCENDING" },
+        { "fieldPath": "lastActiveAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "comment": "Audit log, newest first, optionally filtered to one admin.",
+      "collectionGroup": "auditLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "actorUid", "order": "ASCENDING" },
+        { "fieldPath": "at", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

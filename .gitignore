@@ -16,3 +16,10 @@ server/__pycache__/
 
 # Local build cache
 tsconfig.tsbuildinfo
+
+# Firebase — a service account is the entire project in one file.
+*serviceAccount*.json
+.firebaserc
+firebase-debug.log
+.firebase/
+functions/lib/
