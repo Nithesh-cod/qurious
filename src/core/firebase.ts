@@ -35,8 +35,17 @@ export interface FirebaseConfig {
  * access — Security Rules do that. Shipping it in the bundle is the documented, intended
  * arrangement, which is exactly why the rules file matters so much.
  */
-export function readConfig(): FirebaseConfig | null {
-  const env = (import.meta as { env?: Record<string, string> }).env ?? {};
+export type Env = Record<string, string | undefined>;
+
+/**
+ * The environment is a parameter, not a global read.
+ *
+ * Vite replaces `import.meta.env.VITE_*` with literal strings at transform time, so it
+ * cannot be stubbed at runtime — a test that tried would silently assert against whatever
+ * the developer's own .env happened to contain. Taking the env as an argument makes this
+ * a pure function that can be checked in both states.
+ */
+export function readConfig(env: Env = (import.meta as { env?: Env }).env ?? {}): FirebaseConfig | null {
   const apiKey = env.VITE_FIREBASE_API_KEY?.trim();
   const projectId = env.VITE_FIREBASE_PROJECT_ID?.trim();
   const appId = env.VITE_FIREBASE_APP_ID?.trim();
@@ -54,8 +63,8 @@ export function readConfig(): FirebaseConfig | null {
 }
 
 /** True when this build was given a project. False in the default offline-only build. */
-export function configured(): boolean {
-  return readConfig() !== null;
+export function configured(env?: Env): boolean {
+  return readConfig(env) !== null;
 }
 
 let appPromise: Promise<FirebaseApp | null> | null = null;

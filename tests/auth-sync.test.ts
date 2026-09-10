@@ -25,10 +25,30 @@ const p = (over: Partial<SyncableProgress> = {}): SyncableProgress => ({ ...EMPT
 const read = (rel: string) => readFileSync(new URL(rel, import.meta.url), 'utf8');
 
 describe('an unconfigured build is the old build', () => {
-  it('reports itself unconfigured when no VITE_FIREBASE_* variables are set', () => {
-    // This is the default for every build the team currently ships.
-    expect(readConfig()).toBeNull();
-    expect(configured()).toBe(false);
+  /**
+   * Originally this asserted `readConfig()` was null, which was true only because no
+   * project existed yet. The moment real keys landed in .env the test failed — correctly,
+   * but for the wrong reason: it was pinning an environment, not a behaviour.
+   *
+   * What actually has to hold is that *absence of the variables* yields no config, so the
+   * offline build stays offline. That is testable either way, so it is tested either way.
+   */
+  it('yields no config when the variables are absent', () => {
+    expect(readConfig({})).toBeNull();
+    expect(configured({})).toBe(false);
+    // A partial paste is not a config either — all three are required.
+    expect(readConfig({ VITE_FIREBASE_API_KEY: 'k' })).toBeNull();
+  });
+
+  it('reads a complete config when the variables are present', () => {
+    const cfg = readConfig({
+      VITE_FIREBASE_API_KEY: 'test-key',
+      VITE_FIREBASE_PROJECT_ID: 'test-project',
+      VITE_FIREBASE_APP_ID: 'test-app',
+    });
+    expect(cfg?.projectId).toBe('test-project');
+    // authDomain is derived when absent, so a partial console paste still works.
+    expect(cfg?.authDomain).toBe('test-project.firebaseapp.com');
   });
 
   it('never imports the SDK at module scope', () => {

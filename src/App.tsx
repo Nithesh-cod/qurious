@@ -30,6 +30,9 @@ import { TutorAvatar, type TutorMood } from './ui/TutorAvatar';
 import { SettingsSheet } from './ui/SettingsSheet';
 import { loadConfig, type LlmConfig } from './core/llm';
 import { useOnline } from './ui/UiState';
+import { AuthPanel } from './ui/AuthPanel';
+import { accountsAvailable, watchAccount, type Account } from './core/auth';
+import { syncProgress } from './core/sync';
 import { track, endTiming, startTiming } from './core/analytics';
 import { progressReportPdf, certificatePdf, canCertify, download } from './core/report';
 import { computeScore, levelFor, recordPractice, tierOf, TIER_LABEL, challengePoints } from './core/points';
@@ -77,6 +80,9 @@ export default function App() {
   const [saved, setSaved] = useState<Saved>(load);
   const [view, setView] = useState<View>('learn');
   const online = useOnline();
+  const [authOpen, setAuthOpen] = useState(false);
+  const [account, setAccount] = useState<Account | null>(null);
+  useEffect(() => watchAccount(setAccount), []);
   const [circuit, setCircuit] = useState<Circuit>(() => saved.circuit ?? {
     version: 1, name: 'Scratch', qubits: 2,
     ops: [{ id: 'seed1', name: 'h', qubits: [0] }, { id: 'seed2', name: 'cx', qubits: [0, 1] }],
@@ -220,6 +226,14 @@ export default function App() {
             ))}
           </nav>
 
+          <button
+            className="btn btn-sm btn-ghost auth-button"
+            onClick={() => setAuthOpen(true)}
+            title={account ? 'Your account' : 'Optional — everything works without an account'}
+          >
+            {account ? (account.displayName ?? 'Account') : 'Sign in'}
+          </button>
+
           {!online && (
             /* Offline-first is the whole design, so this is information rather than an
                alarm: it says what is unavailable, not that the app is broken. */
@@ -282,6 +296,24 @@ export default function App() {
         )}
         {view === 'instructor' && <InstructorView mastery={saved.mastery} solved={saved.solved} />}
 
+
+        {authOpen && (
+          <AuthPanel
+            onClose={() => setAuthOpen(false)}
+            onSignedIn={async (a) => {
+              // Pull anything this learner did on another device and push what happened
+              // here. The merge only ever adds, so neither side can lose work.
+              const { merged, synced } = await syncProgress(a, {
+                lessonsDone: saved.lessonsDone,
+                solved: saved.solved,
+                practiceDays: saved.practiceDays,
+                quizAnswers: saved.quizAnswers,
+                mastery: saved.mastery as Record<string, number>,
+              });
+              if (synced) setSaved(s => ({ ...s, ...merged }));
+            }}
+          />
+        )}
         <nav className="bottom-nav" role="tablist" aria-label="Sections">
           {nav.map(n => (
             <button key={n.id} className="bnav-item" role="tab" aria-selected={view === n.id}

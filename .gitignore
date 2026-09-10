@@ -23,3 +23,6 @@ tsconfig.tsbuildinfo
 firebase-debug.log
 .firebase/
 functions/lib/
+
+# Console paste-in; the values live in .env instead.
+firebase.txt
