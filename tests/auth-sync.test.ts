@@ -147,3 +147,29 @@ describe('the admin bootstrap script', () => {
     expect(script).not.toMatch(/private_key|BEGIN [A-Z ]*PRIVATE KEY|AIza[0-9A-Za-z_-]{20}/);
   });
 });
+
+describe('the demo account cannot reach production', () => {
+  const seed = read('../scripts/seed-demo.mjs');
+
+  it('requires an explicit flag', () => {
+    expect(seed).toMatch(/--seed-demo/);
+    expect(seed).toMatch(/Refusing to run without/);
+  });
+
+  it('requires both emulator host variables', () => {
+    // The emulator sets these; a real project does not and cannot be made to.
+    expect(seed).toMatch(/FIREBASE_AUTH_EMULATOR_HOST/);
+    expect(seed).toMatch(/FIRESTORE_EMULATOR_HOST/);
+    expect(seed).toMatch(/Refusing to run outside the emulator/);
+  });
+
+  it('offers no override for the emulator check', () => {
+    // A password published in the documentation must have no path to a real project.
+    expect(seed).not.toMatch(/--force|--production|allowProd|SKIP_EMULATOR/);
+  });
+
+  it('creates a learner, never an admin', () => {
+    expect(seed).toMatch(/role: 'learner'/);
+    expect(seed).not.toMatch(/role: 'admin'/);
+  });
+});
