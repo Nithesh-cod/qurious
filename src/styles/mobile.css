@@ -135,8 +135,37 @@
     gap: 10px;
     min-height: 0;
   }
-  /* Panels size to their content here; nothing may shrink to make the column fit. */
-  .stage-build > .col > * { flex: 0 0 auto; }
+  /*
+   * Panels size to their content vertically; nothing may shrink to make the column fit.
+   *
+   * Horizontally is the opposite: a flex item's default `min-width: auto` refuses to go
+   * below its content, so the state panel was sized by its widest child and spilled off
+   * the right of the screen. Measured at twelve qubits on a 375px viewport it was 436px
+   * wide — the five view tabs alone need 404 — and the parent clipped it, so the extra
+   * was cut off rather than reachable. `min-width: 0` lets it shrink to the column.
+   */
+  .stage-build > .col > * { flex: 0 0 auto; min-width: 0; }
+  .build-state, .build-state-head, .build-state-body { min-width: 0; }
+
+  /*
+   * Five tabs genuinely do not fit in 375px, so let the row scroll rather than pretending
+   * it fits or hiding one. The palette above already behaves this way, so the gesture is
+   * one the learner has met.
+   */
+  .build-state-head .seg {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .build-state-head .seg::-webkit-scrollbar { display: none; }
+  .build-state-head .seg button { flex: 0 0 auto; }
+
+  /* The state vector is one long line; wrapping beats a cut-off. */
+  .ket-line, .ket-body { min-width: 0; overflow-wrap: anywhere; }
+
+  /* Spheres wrap to as many rows as the qubit count needs. */
+  .bloch-strip { min-width: 0; }
   /* Room to scroll past the bottom navigation bar. */
   .stage-build > .col:last-child { padding-bottom: 8px; }
 

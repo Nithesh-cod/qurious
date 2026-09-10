@@ -242,7 +242,22 @@ body {
 .stage-single { grid-template-columns: minmax(0, 1fr); }
 
 .col { min-height: 0; min-width: 0; display: grid; gap: var(--gutter); }
-.col-build { grid-template-rows: auto minmax(0, 1fr) auto; }
+/*
+ * The state panel needs a floor, and the column needs to scroll.
+ *
+ * This was `auto minmax(0, 1fr) auto`. The circuit row is `auto`, so as the qubit count
+ * rises the circuit grows and the 1fr row underneath is squeezed — and `minmax(0, ...)`
+ * explicitly permits squeezing it to nothing. At eight qubits the state panel measured
+ * clientHeight 0 against a scrollHeight of 85: the Bloch spheres and phasors were still
+ * being rendered, into a container with no height, inside a panel with overflow hidden.
+ * Nothing was visible and nothing could be scrolled to.
+ *
+ * A minimum stops the crush. Once the rows can exceed the viewport the column has to
+ * scroll, which is what the second rule is for — otherwise the overflow simply moves from
+ * the panel to the column.
+ */
+.col-build { grid-template-rows: auto minmax(clamp(220px, 34vh, 460px), 1fr) auto; }
+.col-build { overflow-y: auto; overscroll-behavior-y: contain; }
 .scroll { overflow: auto; min-height: 0; scrollbar-width: thin; scrollbar-color: var(--glass-border) transparent; }
 .scroll::-webkit-scrollbar { width: 9px; height: 9px; }
 .scroll::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 99px; border: 2px solid transparent; background-clip: content-box; }

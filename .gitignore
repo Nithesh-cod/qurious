@@ -26,3 +26,9 @@ functions/lib/
 
 # Console paste-in; the values live in .env instead.
 firebase.txt
+
+# Firebase Admin SDK keys. The console names these
+# <project>-firebase-adminsdk-<hash>.json, which the *serviceAccount* pattern
+# above does not match — that gap let one into a commit once.
+*firebase-adminsdk*.json
+*-adminsdk-*.json
