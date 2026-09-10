@@ -192,13 +192,18 @@ export default function App() {
     react(correct ? 'celebrate' : 'encourage');
   }, [react]);
 
-  // Learn comes first: a newcomer should meet a lesson before an empty canvas.
+  // Ordered as the learner's loop runs, not as the features were written: Dashboard says
+  // where you are, Learn teaches, Practice checks, Challenges tests, Build is the open
+  // canvas you graduate to. Instructor sits last because it is not part of that loop.
+  //
+  // The landing view stays `learn` — a first-time Dashboard is empty, and an empty room is
+  // a bad greeting. Order and entry point are separate decisions.
   const nav: { id: View; label: string; icon: JSX.Element }[] = [
+    { id: 'dashboard', label: 'Dashboard', icon: <IconProgress /> },
     { id: 'learn', label: 'Learn', icon: <IconLearn /> },
-    { id: 'build', label: 'Build', icon: <IconBuild /> },
     { id: 'practice', label: 'Practice', icon: <IconQuiz /> },
     { id: 'challenges', label: 'Challenges', icon: <IconChallenge /> },
-    { id: 'dashboard', label: 'Dashboard', icon: <IconProgress /> },
+    { id: 'build', label: 'Build', icon: <IconBuild /> },
     { id: 'instructor', label: 'Instructor', icon: <IconTeacher /> },
   ];
 

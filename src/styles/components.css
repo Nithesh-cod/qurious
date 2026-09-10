@@ -27,7 +27,12 @@
 .gate-chip:active { cursor: grabbing; transform: scale(.94); }
 
 .canvas-scroll { overflow-x: auto; overflow-y: hidden; border-radius: var(--r-md); background: var(--glass-bg-soft); }
-.circuit-svg { display: block; touch-action: pan-x; }
+/* `pan-x` alone forbade vertical panning, so on a phone a thumb landing anywhere on the
+   circuit — which is most of the Build tab — froze the page instead of scrolling it.
+   Both axes are named: the wrapper takes the horizontal pan, the document takes the
+   vertical one. Nothing here drags vertically; placed gates are tapped, and palette chips
+   set `touch-action: none` on themselves. */
+.circuit-svg { display: block; touch-action: pan-x pan-y; }
 
 .wire-label { font-family: var(--mono); font-size: 12px; fill: var(--ink-3); font-weight: 600; }
 .wire-ket { font-family: var(--mono); font-size: 11px; fill: var(--ink-4); }

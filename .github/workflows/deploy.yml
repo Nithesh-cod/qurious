@@ -1,9 +1,12 @@
 # Builds the web app and publishes it to GitHub Pages on every push to main.
 #
-# No API key is set here on purpose. A key given at build time is baked into the
+# No *model* key is set here on purpose. A key given at build time is baked into the
 # JavaScript bundle and readable by anyone who opens the site, so the deployed app ships
 # without one: the tutor runs on its 105 offline topics, and a visitor who wants the
 # language model pastes their own key into Settings, where it stays in their browser.
+#
+# The Firebase config below is the opposite case and is set deliberately — see the note on
+# the build step for why those six values are not secrets and what does the guarding.
 
 name: Deploy to GitHub Pages
 
@@ -39,6 +42,22 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          # The Firebase web config, so the deployed site has the same sign-in the Android
+          # build has. Unlike the model key above, these six values are identifiers rather
+          # than credentials — Google documents them as public, every Firebase web app on
+          # the internet ships them in its bundle, and they grant nothing on their own.
+          #
+          # What actually guards the data is `firestore.rules`, which denies by default and
+          # must be deployed before this site is handed to anyone. App Check is the second
+          # layer and belongs on the same list. Neither is optional simply because the key
+          # is harmless in isolation.
+          VITE_FIREBASE_API_KEY: AIzaSyBJBHkVgb09XEA2wheB1ZbMOTb26SJETYw
+          VITE_FIREBASE_AUTH_DOMAIN: qurious-6562d.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: qurious-6562d
+          VITE_FIREBASE_APP_ID: "1:44005071614:web:585626a87fdc1bff81e3af"
+          VITE_FIREBASE_SENDER_ID: "44005071614"
+          VITE_FIREBASE_STORAGE_BUCKET: qurious-6562d.firebasestorage.app
 
       - uses: actions/configure-pages@v5
 

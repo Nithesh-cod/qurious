@@ -135,6 +135,25 @@
     gap: 10px;
     min-height: 0;
   }
+
+  /*
+   * Give the scroll back to the stage.
+   *
+   * The desktop rule makes .col-build its own scroller with `overscroll-behavior-y:
+   * contain`, which is right there — the column is height-constrained and really does
+   * scroll. Here it is not: it grows to its content, so scrollHeight equals clientHeight
+   * and there is nothing for it to scroll. But it is still a scroll container, and
+   * `contain` is a promise not to hand the gesture to anyone else. The result was a
+   * container that could neither scroll nor pass the scroll on, and the whole Build tab
+   * sat still under a swipe.
+   *
+   * Measured at twelve qubits: .stage-build 658 tall over 4016 of content, scrollTop
+   * pinned at 0 no matter the gesture.
+   */
+  .col-build {
+    overflow: visible;
+    overscroll-behavior-y: auto;
+  }
   /*
    * Panels size to their content vertically; nothing may shrink to make the column fit.
    *

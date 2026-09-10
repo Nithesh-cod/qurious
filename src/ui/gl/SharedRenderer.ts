@@ -171,35 +171,83 @@ export interface Orbit {
   auto: boolean;
 }
 
+/**
+ * How far a touch must travel before it counts as an orbit rather than a scroll.
+ * Below this every gesture is ambiguous, and guessing early is what makes a page feel
+ * like it is fighting the finger.
+ */
+const CLAIM_SLOP = 8;
+
 export function attachOrbit(el: HTMLElement, orbit: Orbit, onChange?: () => void): () => void {
   let dragging = false;
   let lastX = 0, lastY = 0, pointer = -1;
+  // A touch starts undecided. A mouse never is — there is nothing else it could mean.
+  let claimed = false;
+  let startX = 0, startY = 0;
 
   const down = (e: PointerEvent) => {
     dragging = true;
     pointer = e.pointerId;
-    lastX = e.clientX; lastY = e.clientY;
-    orbit.auto = false;
-    el.setPointerCapture?.(e.pointerId);
-    el.style.cursor = 'grabbing';
+    lastX = startX = e.clientX;
+    lastY = startY = e.clientY;
+    claimed = e.pointerType !== 'touch';
+    if (claimed) {
+      orbit.auto = false;
+      el.setPointerCapture?.(e.pointerId);
+      el.style.cursor = 'grabbing';
+    }
   };
+
   const move = (e: PointerEvent) => {
     if (!dragging || e.pointerId !== pointer) return;
+
+    if (!claimed) {
+      // Undecided touch. `touch-action: pan-y` means the browser is still free to turn
+      // this into a page scroll, and it will send pointercancel when it does. Until one
+      // of us commits, move the camera by nothing.
+      const dx = e.clientX - startX, dy = e.clientY - startY;
+      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > CLAIM_SLOP) {
+        // Plainly a scroll. Stand down and let the page have it.
+        dragging = false;
+        return;
+      }
+      if (Math.abs(dx) <= CLAIM_SLOP) return;
+      // Sideways past the slop: nothing else on this axis wants the gesture, so take it.
+      claimed = true;
+      orbit.auto = false;
+      el.setPointerCapture?.(e.pointerId);
+      el.style.cursor = 'grabbing';
+      lastX = e.clientX; lastY = e.clientY;
+      return;
+    }
+
     const dx = e.clientX - lastX, dy = e.clientY - lastY;
     lastX = e.clientX; lastY = e.clientY;
     orbit.theta -= dx * 0.0095;
     orbit.phi = Math.min(Math.PI - 0.12, Math.max(0.12, orbit.phi - dy * 0.0095));
     onChange?.();
   };
+
   const up = (e: PointerEvent) => {
     if (e.pointerId !== pointer) return;
     dragging = false;
+    claimed = false;
     el.releasePointerCapture?.(e.pointerId);
     el.style.cursor = 'grab';
   };
 
   el.style.cursor = 'grab';
-  el.style.touchAction = 'none';
+  // Not `none`.
+  //
+  // `none` hands the element every touch, including the vertical swipe that means "scroll
+  // the page". On a phone the Build tab stacks a dozen of these spheres down a long
+  // column, so almost anywhere the thumb lands is a sphere — the page simply would not
+  // scroll. `pan-y` reserves the vertical axis for the document and leaves the horizontal
+  // one here, which is also the axis that matters: azimuth is what people reach for.
+  //
+  // Tilt is not lost. Once a drag is claimed sideways the browser stops competing for the
+  // gesture and every later move, vertical included, arrives here.
+  el.style.touchAction = 'pan-y';
   el.addEventListener('pointerdown', down);
   el.addEventListener('pointermove', move);
   el.addEventListener('pointerup', up);

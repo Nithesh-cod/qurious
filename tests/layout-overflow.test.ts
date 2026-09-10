@@ -52,3 +52,91 @@ describe('nothing in the state panel may spill off a phone screen', () => {
     expect(mobile).toMatch(/\.ket-line[^{]*\{[^}]*overflow-wrap:\s*anywhere/);
   });
 });
+
+/**
+ * A third device report, same tab: the page would not scroll.
+ *
+ * Cause was not layout but gesture ownership. Two elements claimed every touch that
+ * landed on them — the Bloch/amplitude canvases via `touch-action: none`, and the circuit
+ * SVG via `touch-action: pan-x`, which permits horizontal panning and therefore forbids
+ * vertical. Between them they cover nearly the whole Build column on a phone, so a thumb
+ * had almost nowhere to land that would scroll.
+ */
+describe('a phone can still scroll past the visualisations', () => {
+  const renderer = readFileSync(new URL('../src/ui/gl/SharedRenderer.ts', import.meta.url), 'utf8');
+  const components = read('components.css');
+
+  it('leaves the vertical axis to the page on the 3D canvases', () => {
+    expect(renderer).toMatch(/touchAction\s*=\s*'pan-y'/);
+    expect(renderer).not.toMatch(/touchAction\s*=\s*'none'/);
+  });
+
+  it('does not capture a touch until it is plainly sideways', () => {
+    // Capturing on pointerdown is what made the gesture unrecoverable: by the time the
+    // browser could tell this was a scroll, the element already owned it.
+    expect(renderer).toMatch(/pointerType\s*!==\s*'touch'/);
+    expect(renderer).toMatch(/CLAIM_SLOP/);
+  });
+
+  it('a mouse still orbits immediately', () => {
+    // The slop exists to disambiguate a touch. A mouse has nothing to disambiguate, and
+    // making it wait 8px would feel like lag.
+    expect(renderer).toMatch(/claimed\s*=\s*e\.pointerType\s*!==\s*'touch'/);
+  });
+
+  it('lets the circuit pan sideways without freezing the page', () => {
+    const rule = /\.circuit-svg\s*\{([^}]*)\}/.exec(components)?.[1] ?? '';
+    expect(rule).toMatch(/touch-action:\s*pan-x\s+pan-y/);
+  });
+});
+
+/**
+ * Tab order is a product decision, so it is pinned rather than left to whoever edits the
+ * array next: it follows the learner's loop — see where you are, learn, practise, be
+ * tested, then build freely. Instructor is not part of that loop and sits at the end.
+ */
+describe('the nav follows the learning loop', () => {
+  const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
+
+  it('orders the tabs Dashboard, Learn, Practice, Challenges, Build, Instructor', () => {
+    const block = /const nav:[^=]*=\s*\[([\s\S]*?)\];/.exec(app)?.[1] ?? '';
+    expect(block, 'nav array not found').toBeTruthy();
+    const ids = [...block.matchAll(/id:\s*'([a-z]+)'/g)].map(m => m[1]);
+    expect(ids).toEqual(['dashboard', 'learn', 'practice', 'challenges', 'build', 'instructor']);
+  });
+
+  it('still opens on Learn, not on an empty Dashboard', () => {
+    // Order and entry point are separate decisions. A newcomer's Dashboard has nothing in
+    // it, and greeting someone with their own emptiness is a poor first screen.
+    expect(app).toMatch(/useState<View>\('learn'\)/);
+  });
+});
+
+/**
+ * The other half of the same report, and a fault the previous fix introduced.
+ *
+ * Desktop makes `.col-build` its own scroller with `overscroll-behavior-y: contain`,
+ * which is correct there — the column has a fixed height and genuinely scrolls. On a
+ * phone the column grows to its content instead, so it can never scroll; but it was still
+ * a scroll container, and `contain` is a promise not to pass the gesture to its parent.
+ * A swipe therefore did nothing at all: 658px of viewport over 4016px of content, and
+ * scrollTop stuck at 0.
+ */
+describe('the Build tab scrolls on a phone', () => {
+  it('hands the scroll back to the stage', () => {
+    const media = /@media\s*\(max-width:\s*760px\)\s*\{([\s\S]*)$/.exec(mobile)?.[1] ?? '';
+    expect(media, 'mobile media query not found').toBeTruthy();
+    const rule = /\.col-build\s*\{([^}]*)\}/.exec(media)?.[1] ?? '';
+    expect(rule, '.col-build override missing from the mobile query').toBeTruthy();
+    expect(rule).toMatch(/overflow:\s*visible/);
+    // `contain` on a container that cannot scroll is a dead end for the gesture.
+    expect(rule).toMatch(/overscroll-behavior-y:\s*auto/);
+  });
+
+  it('leaves the desktop column scrolling as it was', () => {
+    // The desktop rule is what stops the state panel overflowing its column; the mobile
+    // override must not be written in a way that also disarms it.
+    expect(liquid).toMatch(/\.col-build\s*\{[^}]*overflow-y:\s*auto/);
+    expect(liquid).toMatch(/\.col-build\s*\{[^}]*overscroll-behavior-y:\s*contain/);
+  });
+});
